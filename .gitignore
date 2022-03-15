@@ -1,0 +1,50 @@
+# Directories
+/bin/*
+/build/* 
+/.vscode/*
+
+# Prerequisites
+*.d
+
+# Compiled object files
+*.slo
+*.lo
+*.o
+*.os
+*.obj
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+*.wasm
+
+# Compiled static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.bundle
+
+# Log files
+*.log
+
+# Godot
+.import/
+export.cfg
+export_presets.cfg
+
+# Python
+__pycache__/
+
+# SCons
+*.sconsign.dblite

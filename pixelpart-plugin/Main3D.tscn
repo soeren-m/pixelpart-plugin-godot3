@@ -1,0 +1,16 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://addons/pixelpart/src/PixelpartEffect.gdns" type="Script" id=1]
+[ext_resource path="res://effects/SampleEffect.ppfx" type="Resource" id=2]
+[ext_resource path="res://Main3D.gd" type="Script" id=3]
+[ext_resource path="res://TestNode3D.gd" type="Script" id=4]
+
+[node name="Main3D" type="Spatial"]
+script = ExtResource( 3 )
+
+[node name="TestNode3D" type="Spatial" parent="."]
+script = ExtResource( 4 )
+
+[node name="SampleEffect" type="Spatial" parent="TestNode3D"]
+script = ExtResource( 1 )
+effect = ExtResource( 2 )
