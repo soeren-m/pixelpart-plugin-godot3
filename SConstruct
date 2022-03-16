@@ -168,11 +168,11 @@ elif env["platform"] == "osx":
 elif env["platform"] == "ios":
     if env["ios_simulator"]:
         sdk_name = "iphonesimulator"
-        env.Append(CCFLAGS=["-mios-simulator-version-min=10.0"])
+        env.Append(CCFLAGS=["-mios-simulator-version-min=12.0"])
         env["LIBSUFFIX"] = ".simulator" + env["LIBSUFFIX"]
     else:
         sdk_name = "iphoneos"
-        env.Append(CCFLAGS=["-miphoneos-version-min=10.0"])
+        env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
 
     try:
         sdk_path = decode_utf8(subprocess.check_output(["xcrun", "--sdk", sdk_name, "--show-sdk-path"]).strip())
@@ -186,6 +186,7 @@ elif env["platform"] == "ios":
     env["AR"] = compiler_path + "ar"
     env["RANLIB"] = compiler_path + "ranlib"
 
+    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
     env.Append(CXXFLAGS=["-std=c++17"])
     env.Append(CCFLAGS=["-arch", env["ios_arch"], "-isysroot", sdk_path])
     env.Append(LINKFLAGS=["-arch", env["ios_arch"], "-framework", "Cocoa", "-Wl,-undefined,dynamic_lookup", "-isysroot", sdk_path, "-F" + sdk_path])
