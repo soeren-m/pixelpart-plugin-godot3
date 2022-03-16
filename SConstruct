@@ -112,6 +112,7 @@ if env["target"] == "debug":
     env.Append(CPPDEFINES=["DEBUG_ENABLED", "DEBUG_METHODS_ENABLED"])
 
 if env["platform"] == "linux" or env["platform"] == "freebsd":
+    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
     env.Append(CXXFLAGS=["-std=c++17"])
     env.Append(CCFLAGS=["-fPIC", "-Wwrite-strings"])
     env.Append(LINKFLAGS=["-Wl,-R,'$$ORIGIN'", "-Wl,--no-undefined", "-pthread", "-static-libgcc", "-static-libstdc++"])
@@ -134,6 +135,7 @@ elif env["platform"] == "osx":
     if env["bits"] == "32":
         raise ValueError("Only 64-bit builds are supported for the macOS target.")
 
+    env["CC"] = "clang"
     env["CXX"] = "clang++"
 
     if env["macos_arch"] == "universal":
@@ -143,6 +145,7 @@ elif env["platform"] == "osx":
         env.Append(LINKFLAGS=["-arch", env["macos_arch"]])
         env.Append(CCFLAGS=["-arch", env["macos_arch"]])
 
+    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
     env.Append(CXXFLAGS=["-std=c++17"])
 
     if env["macos_deployment_target"] != "default":
