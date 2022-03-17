@@ -311,7 +311,7 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 			RID immediate = vs->immediate_create();
 			RID instance = vs->instance_create();
 			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER);
+			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 
 			emitterInstances.push_back(InstanceData{
 				immediate,

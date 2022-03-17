@@ -302,7 +302,7 @@ void PixelpartEffect2D::set_effect(Ref<PixelpartEffectResource> effectRes) {
 
 			RID canvasItem = vs->canvas_item_create();
 			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER);
+			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 
 			emitterInstances.push_back(InstanceData{
 				canvasItem,
