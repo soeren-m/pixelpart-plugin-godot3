@@ -300,6 +300,7 @@ elif env["platform"] == "android":
     env["CXX"] = toolchain + "/bin/clang++"
     env["AR"] = toolchain + "/bin/" + arch_info["tool_path"] + "-ar"
 
+    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
     env.Append(CXXFLAGS=["-std=c++17"])
     env.Append(CCFLAGS=["--target=" + arch_info["target"] + env["android_api_level"], "-march=" + arch_info["march"], "-fPIC"])
     env.Append(CCFLAGS=arch_info["ccflags"])
