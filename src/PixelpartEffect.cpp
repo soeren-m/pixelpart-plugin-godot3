@@ -480,7 +480,7 @@ void PixelpartEffect::draw_emitter3d(const pixelpart::ParticleEmitter& emitter, 
 
 			vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLE_STRIP);
 
-			for(uint32_t i = 0; i < points.size(); i++) {
+			for(uint32_t i = 0; i + 1 < points.size(); i++) {
 				vs->immediate_vertex(immediate, pp2gd(pixelpart::vec3d(points[i].x, points[i].y, 0.0)));
 				vs->immediate_uv(immediate, pp2gd(uvs[i]));
 				vs->immediate_color(immediate, pp2gd(colors[i]));
@@ -493,10 +493,10 @@ void PixelpartEffect::draw_emitter3d(const pixelpart::ParticleEmitter& emitter, 
 			PoolVector2Array pointArray;
 			PoolVector2Array uvArray;
 			PoolColorArray colorArray;
-			indexArray.resize(pixelpart::getNumParticleIndices(emitter, numParticles));
-			pointArray.resize(pixelpart::getNumParticleVertices(emitter, numParticles));
-			uvArray.resize(pixelpart::getNumParticleVertices(emitter, numParticles));
-			colorArray.resize(pixelpart::getNumParticleVertices(emitter, numParticles));
+			indexArray.resize(static_cast<int>(numParticles * 6));
+			pointArray.resize(static_cast<int>(numParticles * 4));
+			uvArray.resize(static_cast<int>(numParticles * 4));
+			colorArray.resize(static_cast<int>(numParticles * 4));
 
 			pixelpart::generateParticleSpriteTriangles(
 				indexArray.write().ptr(),

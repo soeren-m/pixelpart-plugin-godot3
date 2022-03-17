@@ -455,12 +455,13 @@ void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter
 		PoolVector2Array pointArray;
 		PoolVector2Array uvArray;
 		PoolColorArray colorArray;
-		indexArray.resize(static_cast<int>(pixelpart::getNumParticleIndices(emitter, numParticles)));
-		pointArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
-		uvArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
-		colorArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
 
 		if(emitter.renderer == pixelpart::ParticleEmitter::RendererType::trail && numParticles > 1) {
+			indexArray.resize(static_cast<int>(pixelpart::getNumParticleIndices(emitter, numParticles)));
+			pointArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
+			uvArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
+			colorArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
+
 			pixelpart::generateParticleTrailTriangles(
 				indexArray.write().ptr(),
 				reinterpret_cast<float*>(pointArray.write().ptr()),
@@ -473,6 +474,11 @@ void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter
 				scaleY);
 		}
 		else {
+			indexArray.resize(static_cast<int>(numParticles * 6));
+			pointArray.resize(static_cast<int>(numParticles * 4));
+			uvArray.resize(static_cast<int>(numParticles * 4));
+			colorArray.resize(static_cast<int>(numParticles * 4));
+
 			pixelpart::generateParticleSpriteTriangles(
 				indexArray.write().ptr(),
 				reinterpret_cast<float*>(pointArray.write().ptr()),
