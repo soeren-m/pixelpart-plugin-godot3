@@ -340,6 +340,7 @@ elif env["platform"] == "javascript":
     env.Replace(SHLINKFLAGS="$LINKFLAGS")
     env.Replace(SHLINKFLAGS="$LINKFLAGS")
 
+    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
     env.Append(CXXFLAGS=["-std=c++17"])
 
     if env["target"] == "debug":
