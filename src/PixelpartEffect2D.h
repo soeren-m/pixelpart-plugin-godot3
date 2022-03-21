@@ -31,7 +31,7 @@ public:
 	void _process(float dt);
 	void _update_draw();
 
-	void play();
+	void play(bool p);
 	void pause();
 	void restart();
 	void reset();

@@ -8,6 +8,7 @@
 
 namespace godot {
 void PixelpartEffect::_register_methods() {
+	register_property<PixelpartEffect, bool>("playing", &PixelpartEffect::play, &PixelpartEffect::is_playing, true);
 	register_property<PixelpartEffect, bool>("loop", &PixelpartEffect::set_loop, &PixelpartEffect::get_loop, false);
 	register_property<PixelpartEffect, float>("loop_time", &PixelpartEffect::set_loop_time, &PixelpartEffect::get_loop_time, 1.0f,
 		GODOT_METHOD_RPC_MODE_DISABLED,
@@ -94,6 +95,10 @@ void PixelpartEffect::_exit_tree() {
 }
 
 void PixelpartEffect::_process(float dt) {
+	if(!particleEngine.getEffect()) {
+		return;
+	}
+
 	if(playing) {
 		simulationTime += std::min(dt, 1.0f) * speed;
 
@@ -117,6 +122,10 @@ void PixelpartEffect::_update_draw() {
 	}
 
 	const pixelpart::Effect* effect = particleEngine.getEffect();
+	if(!effect) {
+		return;
+	}
+
 	const std::vector<pixelpart::ParticleEmitter>& emitters = effect->getParticleEmitters();
 	const std::vector<pixelpart::Sprite> sprites = effect->getSprites();
 	const std::vector<uint32_t> emitterOrder = effect->getParticleEmittersSortedByLayer();
@@ -165,8 +174,8 @@ void PixelpartEffect::_update_draw() {
 	}
 }
 
-void PixelpartEffect::play() {
-	playing = true;
+void PixelpartEffect::play(bool p) {
+	playing = p;
 }
 void PixelpartEffect::pause() {
 	playing = false;
@@ -347,7 +356,7 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 		}
 	}
 	else {
-		Godot::print_error(String("Effect resource not valid"), __FUNCTION__, "", __LINE__);
+		particleEngine.setEffect(nullptr);
 	}
 }
 Ref<PixelpartEffectResource> PixelpartEffect::get_effect() const {
