@@ -14,8 +14,8 @@ _global_script_class_icons={
 
 [application]
 
-config/name="pixelpart for Godot 3"
-config/description="pixelpart for Godot 3"
+config/name="Pixelpart for Godot 3"
+config/description="Runtime plugin for Godot 3"
 run/main_scene="res://Main.tscn"
 config/icon="res://icon.png"
 

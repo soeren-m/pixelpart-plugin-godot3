@@ -11,8 +11,6 @@
 #include <Reference.hpp>
 
 namespace godot {
-class PixelpartEffectBase;
-
 class PixelpartParticleEmitter : public Reference {
 	GODOT_CLASS(PixelpartParticleEmitter, Reference)
 
@@ -72,7 +70,7 @@ public:
 	float get_particle_angular_velocity_variance() const;
 	float get_particle_size_variance() const;
 	float get_particle_opacity_variance() const;
-	
+
 	Ref<PixelpartCurve> get_width() const;
 	Ref<PixelpartCurve> get_height() const;
 	Ref<PixelpartCurve> get_orientation() const;

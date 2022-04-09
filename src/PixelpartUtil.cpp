@@ -1,6 +1,6 @@
 #include "PixelpartUtil.h"
 
-namespace godot {	
+namespace godot {
 Vector2 pp2gd(const pixelpart::vec2d& v) {
 	return Vector2(v.x, v.y);
 }

@@ -23,7 +23,7 @@ void PixelpartPath::_register_methods() {
 }
 
 PixelpartPath::PixelpartPath() {
-	
+
 }
 
 void PixelpartPath::_init() {

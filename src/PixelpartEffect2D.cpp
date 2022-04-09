@@ -2,10 +2,13 @@
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
 #include "RenderUtil.h"
+#include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
+#include <ImageTexture.hpp>
 
 namespace godot {
 void PixelpartEffect2D::_register_methods() {
+	register_property<PixelpartEffect2D, Ref<PixelpartEffectResource>>("effect", &PixelpartEffect2D::set_effect, &PixelpartEffect2D::get_effect, nullptr);
 	register_property<PixelpartEffect2D, bool>("playing", &PixelpartEffect2D::play, &PixelpartEffect2D::is_playing, true);
 	register_property<PixelpartEffect2D, bool>("loop", &PixelpartEffect2D::set_loop, &PixelpartEffect2D::get_loop, false);
 	register_property<PixelpartEffect2D, float>("loop_time", &PixelpartEffect2D::set_loop_time, &PixelpartEffect2D::get_loop_time, 1.0f,
@@ -22,7 +25,6 @@ void PixelpartEffect2D::_register_methods() {
 		GODOT_PROPERTY_HINT_EXP_RANGE, "1.0,100.0,1.0");
 	register_property<PixelpartEffect2D, bool>("flip_h", &PixelpartEffect2D::set_flip_h, &PixelpartEffect2D::get_flip_h, false);
 	register_property<PixelpartEffect2D, bool>("flip_v", &PixelpartEffect2D::set_flip_v, &PixelpartEffect2D::get_flip_v, true);
-	register_property<PixelpartEffect2D, Ref<PixelpartEffectResource>>("effect", &PixelpartEffect2D::set_effect, &PixelpartEffect2D::get_effect, nullptr);
 	register_method("_init", &PixelpartEffect2D::_init);
 	register_method("_enter_tree", &PixelpartEffect2D::_enter_tree);
 	register_method("_exit_tree", &PixelpartEffect2D::_exit_tree);
@@ -62,13 +64,15 @@ PixelpartEffect2D::~PixelpartEffect2D() {
 	for(InstanceData& data : emitterInstances) {
 		vs->free_rid(data.canvasItem);
 		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
 	}
 
 	for(InstanceData& data : spriteInstances) {
 		vs->free_rid(data.canvasItem);
 		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	}
+
+	for(auto& entry : textures) {
+		vs->free_rid(entry.second);
 	}
 }
 
@@ -102,7 +106,7 @@ void PixelpartEffect2D::_process(float dt) {
 			simulationTime -= timeStep;
 			particleEngine.step(timeStep);
 
-			if(loop) {		
+			if(loop) {
 				if(particleEngine.getTime() > loopTime) {
 					particleEngine.reset();
 				}
@@ -135,9 +139,10 @@ void PixelpartEffect2D::_update_draw() {
 		maxLayer = std::max(maxLayer, sprites[spriteOrder.back()].layer);
 	}
 
-	for(uint32_t l = 0, emitterIndex = 0, spriteIndex = 0; l <= maxLayer; l++) {
-		while(spriteIndex < sprites.size()) {
-			const pixelpart::Sprite& sprite = sprites[spriteOrder[spriteIndex]];
+	for(uint32_t l = 0, e = 0, s = 0; l <= maxLayer; l++) {
+		while(s < sprites.size()) {
+			const uint32_t spriteIndex = spriteOrder[s];
+			const pixelpart::Sprite& sprite = sprites[spriteIndex];
 			if(sprite.layer != l || spriteIndex >= spriteInstances.size()) {
 				break;
 			}
@@ -146,13 +151,14 @@ void PixelpartEffect2D::_update_draw() {
 				sprite,
 				spriteInstances[spriteIndex].canvasItem,
 				spriteInstances[spriteIndex].material,
-				spriteInstances[spriteIndex].texture);
+				textures.at(spriteInstances[spriteIndex].textureId));
 
-			spriteIndex++;
+			s++;
 		}
 
-		while(emitterIndex < emitterOrder.size()) {
-			const pixelpart::ParticleEmitter& emitter = emitters[emitterOrder[emitterIndex]];
+		while(e < emitterOrder.size()) {
+			const uint32_t emitterIndex = emitterOrder[e];
+			const pixelpart::ParticleEmitter& emitter = emitters[emitterIndex];
 			if(emitter.layer != l || emitterIndex >= emitterInstances.size()) {
 				break;
 			}
@@ -161,9 +167,9 @@ void PixelpartEffect2D::_update_draw() {
 				emitter,
 				emitterInstances[emitterIndex].canvasItem,
 				emitterInstances[emitterIndex].material,
-				emitterInstances[emitterIndex].texture);
+				textures.at(emitterInstances[emitterIndex].textureId));
 
-			emitterIndex++;
+			e++;
 		}
 	}
 }
@@ -239,34 +245,34 @@ float PixelpartEffect2D::get_import_scale() const {
 void PixelpartEffect2D::set_effect(Ref<PixelpartEffectResource> effectRes) {
 	VisualServer* vs = VisualServer::get_singleton();
 
-	for(InstanceData& data : emitterInstances) {
-		vs->free_rid(data.canvasItem);
-		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	for(InstanceData& instanceData : emitterInstances) {
+		vs->free_rid(instanceData.canvasItem);
+		vs->free_rid(instanceData.material);
 	}
 
-	for(InstanceData& data : spriteInstances) {
-		vs->free_rid(data.canvasItem);
-		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	for(InstanceData& instanceData : spriteInstances) {
+		vs->free_rid(instanceData.canvasItem);
+		vs->free_rid(instanceData.material);
+	}
+
+	for(auto& entry : textures) {
+		vs->free_rid(entry.second);
 	}
 
 	emitterInstances.clear();
 	spriteInstances.clear();
-
-	effectResource = effectRes;
-
 	particleEmitters.clear();
 	forceFields.clear();
 	colliders.clear();
 	sprites.clear();
+	textures.clear();
+
+	effectResource = effectRes;
 
 	if(effectResource.is_valid()) {
 		effectResource->load();
+
 		nativeEffect = effectResource->get_project().effect;
-
-		const pixelpart::ResourceDatabase& projectResources = effectResource->get_project_resources();
-
 		particleEngine.setEffect(&nativeEffect);
 
 		for(uint32_t i = 0; i < nativeEffect.getNumParticleEmitters(); i++) {
@@ -299,48 +305,34 @@ void PixelpartEffect2D::set_effect(Ref<PixelpartEffectResource> effectRes) {
 
 		for(uint32_t i = 0; i < nativeEffect.getNumParticleEmitters(); i++) {
 			const pixelpart::ParticleEmitter& emitter = nativeEffect.getParticleEmitterByIndex(i);
-			const pixelpart::ImageResource& imageResource = effectResource->get_project_resources().images.at(emitter.particleSprite.id);
-
-			PoolByteArray imageData;
-			imageData.resize(imageResource.data.size());
-			memcpy(imageData.write().ptr(), imageResource.data.data(), imageResource.data.size());
-
-			Ref<Image> image;
-			image.instance();
-			image->create_from_data(imageResource.width, imageResource.height, false, Image::FORMAT_RGBA8, imageData);
-
-			RID canvasItem = vs->canvas_item_create();
-			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 
 			emitterInstances.push_back(InstanceData{
-				canvasItem,
-				material,
-				texture
+				vs->canvas_item_create(),
+				vs->material_create(),
+				emitter.particleSprite.id
 			});
 		}
 
 		for(uint32_t i = 0; i < nativeEffect.getNumSprites(); i++) {
 			const pixelpart::Sprite& sprite = nativeEffect.getSprite(i);
-			const pixelpart::ImageResource& imageResource = effectResource->get_project_resources().images.at(sprite.image.id);
 
+			spriteInstances.push_back(InstanceData{
+				vs->canvas_item_create(),
+				vs->material_create(),
+				sprite.image.id
+			});
+		}
+
+		for(const auto& resource : effectResource->get_project_resources().images) {
 			PoolByteArray imageData;
-			imageData.resize(imageResource.data.size());
-			memcpy(imageData.write().ptr(), imageResource.data.data(), imageResource.data.size());
+			imageData.resize(resource.second.data.size());
+			memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
 
 			Ref<Image> image;
 			image.instance();
-			image->create_from_data(imageResource.width, imageResource.height, false, Image::FORMAT_RGBA8, imageData);
+			image->create_from_data(resource.second.width, resource.second.height, false, Image::FORMAT_RGBA8, imageData);
 
-			RID canvasItem = vs->canvas_item_create();
-			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER);
-
-			spriteInstances.push_back(InstanceData{
-				canvasItem,
-				material,
-				texture
-			});
+			textures[resource.first] = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 		}
 	}
 	else {
@@ -384,7 +376,7 @@ Ref<PixelpartCollider> PixelpartEffect2D::get_collider(String name) const {
 Ref<PixelpartSprite> PixelpartEffect2D::get_sprite(String name) const {
 	CharString nameCharString = name.utf8();
 	std::string nameStdString = std::string(nameCharString.get_data(), nameCharString.length());
-	
+
 	if(sprites.count(nameStdString)) {
 		return sprites.at(nameStdString);
 	}
@@ -416,7 +408,7 @@ Ref<PixelpartParticleEmitter> PixelpartEffect2D::get_particle_emitter_by_index(i
 Ref<PixelpartForceField> PixelpartEffect2D::get_force_field_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasForceField(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getForceField(static_cast<uint32_t>(index)).name;
-		
+
 		if(forceFields.count(name)) {
 			return forceFields.at(name);
 		}
@@ -427,7 +419,7 @@ Ref<PixelpartForceField> PixelpartEffect2D::get_force_field_by_index(int index) 
 Ref<PixelpartCollider> PixelpartEffect2D::get_collider_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasCollider(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getCollider(static_cast<uint32_t>(index)).name;
-		
+
 		if(colliders.count(name)) {
 			return colliders.at(name);
 		}
@@ -438,7 +430,7 @@ Ref<PixelpartCollider> PixelpartEffect2D::get_collider_by_index(int index) const
 Ref<PixelpartSprite> PixelpartEffect2D::get_sprite_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasSprite(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getSprite(static_cast<uint32_t>(index)).name;
-		
+
 		if(sprites.count(name)) {
 			return sprites.at(name);
 		}
@@ -447,7 +439,7 @@ Ref<PixelpartSprite> PixelpartEffect2D::get_sprite_by_index(int index) const {
 	return Ref<PixelpartSprite>();
 }
 
-void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter, RID canvasItem, RID material, RID spriteTexture) {
+void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter, RID canvasItem, RID material, RID texture) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	vs->canvas_item_clear(canvasItem);
@@ -460,42 +452,34 @@ void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
 
+		pixelpart::ParticleMeshBuildInfo buildInfo(emitter, particles, numParticles);
+
 		PoolIntArray indexArray;
 		PoolVector2Array pointArray;
 		PoolVector2Array uvArray;
 		PoolColorArray colorArray;
+		indexArray.resize(buildInfo.numIndices);
+		pointArray.resize(buildInfo.numVertices);
+		uvArray.resize(buildInfo.numVertices);
+		colorArray.resize(buildInfo.numVertices);
 
 		if(emitter.renderer == pixelpart::ParticleEmitter::RendererType::trail && numParticles > 1) {
-			indexArray.resize(static_cast<int>(pixelpart::getNumParticleIndices(emitter, numParticles)));
-			pointArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
-			uvArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
-			colorArray.resize(static_cast<int>(pixelpart::getNumParticleVertices(emitter, numParticles)));
-
 			pixelpart::generateParticleTrailTriangles(
 				indexArray.write().ptr(),
 				reinterpret_cast<float*>(pointArray.write().ptr()),
 				reinterpret_cast<float*>(uvArray.write().ptr()),
 				reinterpret_cast<float*>(colorArray.write().ptr()),
-				emitter,
-				particles,
-				numParticles,
+				buildInfo,
 				scaleX,
 				scaleY);
 		}
 		else {
-			indexArray.resize(static_cast<int>(numParticles * 6));
-			pointArray.resize(static_cast<int>(numParticles * 4));
-			uvArray.resize(static_cast<int>(numParticles * 4));
-			colorArray.resize(static_cast<int>(numParticles * 4));
-
 			pixelpart::generateParticleSpriteTriangles(
 				indexArray.write().ptr(),
 				reinterpret_cast<float*>(pointArray.write().ptr()),
 				reinterpret_cast<float*>(uvArray.write().ptr()),
 				reinterpret_cast<float*>(colorArray.write().ptr()),
-				emitter,
-				particles,
-				numParticles,
+				buildInfo,
 				scaleX,
 				scaleY);
 		}
@@ -508,13 +492,13 @@ void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter
 		vs->canvas_item_set_transform(canvasItem, Transform2D());
 		vs->canvas_item_set_material(canvasItem, material);
 
-		if(numParticles > 0) {
-			vs->canvas_item_add_triangle_array(canvasItem, indexArray, pointArray, colorArray, uvArray, PoolIntArray(), PoolRealArray(), spriteTexture);
+		if(buildInfo.numIndices > 0) {
+			vs->canvas_item_add_triangle_array(canvasItem, indexArray, pointArray, colorArray, uvArray, PoolIntArray(), PoolRealArray(), texture);
 		}
 	}
 }
 
-void PixelpartEffect2D::draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID material, RID spriteTexture) {
+void PixelpartEffect2D::draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID material, RID texture) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	vs->canvas_item_clear(canvasItem);
@@ -525,24 +509,24 @@ void PixelpartEffect2D::draw_sprite2d(const pixelpart::Sprite& sprite, RID canva
 		const pixelpart::ImageResource& imageResource = effectResource->get_project_resources().images.at(sprite.image.id);
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
-		
+
+		pixelpart::SpriteMeshBuildInfo buildInfo(sprite, imageResource, particleEngine.getTime());
+
 		PoolIntArray indexArray;
 		PoolVector2Array pointArray;
 		PoolVector2Array uvArray;
 		PoolColorArray colorArray;
-		indexArray.resize(6);
-		pointArray.resize(4);
-		uvArray.resize(4);
-		colorArray.resize(4);
+		indexArray.resize(buildInfo.numIndices);
+		pointArray.resize(buildInfo.numVertices);
+		uvArray.resize(buildInfo.numVertices);
+		colorArray.resize(buildInfo.numVertices);
 
 		pixelpart::generateSpriteTriangles(
 			indexArray.write().ptr(),
 			reinterpret_cast<float*>(pointArray.write().ptr()),
 			reinterpret_cast<float*>(uvArray.write().ptr()),
 			reinterpret_cast<float*>(colorArray.write().ptr()),
-			sprite,
-			static_cast<pixelpart::floatd>(imageResource.width) / static_cast<pixelpart::floatd>(imageResource.height),
-			particleEngine.getTime(),
+			buildInfo,
 			scaleX,
 			scaleY);
 
@@ -553,7 +537,7 @@ void PixelpartEffect2D::draw_sprite2d(const pixelpart::Sprite& sprite, RID canva
 		vs->canvas_item_set_parent(canvasItem, get_canvas_item());
 		vs->canvas_item_set_transform(canvasItem, Transform2D());
 		vs->canvas_item_set_material(canvasItem, material);
-		vs->canvas_item_add_triangle_array(canvasItem, indexArray, pointArray, colorArray, uvArray, PoolIntArray(), PoolRealArray(), spriteTexture);
+		vs->canvas_item_add_triangle_array(canvasItem, indexArray, pointArray, colorArray, uvArray, PoolIntArray(), PoolRealArray(), texture);
 	}
 }
 }

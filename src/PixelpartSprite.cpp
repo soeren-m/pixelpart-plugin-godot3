@@ -96,12 +96,12 @@ float PixelpartSprite::get_local_time() const {
 		nativeParticleEngine->getTime() - nativeSprite->lifetimeStart, nativeSprite->lifetimeDuration) / nativeSprite->lifetimeDuration);
 }
 
-void PixelpartSprite::set_blend_mode(int mode) {	
+void PixelpartSprite::set_blend_mode(int mode) {
 	if(nativeSprite) {
 		nativeSprite->blendMode = static_cast<pixelpart::BlendMode>(mode);
 	}
 }
-void PixelpartSprite::set_color_mode(int mode) {	
+void PixelpartSprite::set_color_mode(int mode) {
 	if(nativeSprite) {
 		nativeSprite->colorMode = static_cast<pixelpart::ColorMode>(mode);
 	}
@@ -111,7 +111,7 @@ void PixelpartSprite::set_layer(int layer) {
 		nativeSprite->layer = static_cast<uint32_t>(std::max(layer, 0));
 	}
 }
-void PixelpartSprite::set_visible(bool visible) {	
+void PixelpartSprite::set_visible(bool visible) {
 	if(nativeSprite) {
 		nativeSprite->visible = visible;
 	}
@@ -137,7 +137,7 @@ int PixelpartSprite::get_layer() const {
 
 	return 0;
 }
-bool PixelpartSprite::is_visible() const {	
+bool PixelpartSprite::is_visible() const {
 	if(nativeSprite) {
 		return nativeSprite->visible;
 	}
@@ -145,7 +145,7 @@ bool PixelpartSprite::is_visible() const {
 	return false;
 }
 
-Ref<PixelpartCurve> PixelpartSprite::get_width() const {	
+Ref<PixelpartCurve> PixelpartSprite::get_width() const {
 	if(nativeSprite) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
@@ -156,7 +156,7 @@ Ref<PixelpartCurve> PixelpartSprite::get_width() const {
 
 	return Ref<PixelpartCurve>();
 }
-Ref<PixelpartCurve> PixelpartSprite::get_height() const {	
+Ref<PixelpartCurve> PixelpartSprite::get_height() const {
 	if(nativeSprite) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
@@ -167,7 +167,7 @@ Ref<PixelpartCurve> PixelpartSprite::get_height() const {
 
 	return Ref<PixelpartCurve>();
 }
-Ref<PixelpartCurve> PixelpartSprite::get_orientation() const {	
+Ref<PixelpartCurve> PixelpartSprite::get_orientation() const {
 	if(nativeSprite) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
@@ -178,7 +178,7 @@ Ref<PixelpartCurve> PixelpartSprite::get_orientation() const {
 
 	return Ref<PixelpartCurve>();
 }
-Ref<PixelpartPath> PixelpartSprite::get_motion_path() const {	
+Ref<PixelpartPath> PixelpartSprite::get_motion_path() const {
 	if(nativeSprite) {
 		Ref<PixelpartPath> path;
 		path.instance();
@@ -189,7 +189,7 @@ Ref<PixelpartPath> PixelpartSprite::get_motion_path() const {
 
 	return Ref<PixelpartPath>();
 }
-Ref<PixelpartGradient> PixelpartSprite::get_color() const {	
+Ref<PixelpartGradient> PixelpartSprite::get_color() const {
 	if(nativeSprite) {
 		Ref<PixelpartGradient> gradient;
 		gradient.instance();
@@ -200,7 +200,7 @@ Ref<PixelpartGradient> PixelpartSprite::get_color() const {
 
 	return Ref<PixelpartGradient>();
 }
-Ref<PixelpartCurve> PixelpartSprite::get_opacity() const {	
+Ref<PixelpartCurve> PixelpartSprite::get_opacity() const {
 	if(nativeSprite) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();

@@ -1,1 +1,1 @@
-# pixelpart for Godot 3
+# Pixelpart for Godot 3

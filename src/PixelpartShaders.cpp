@@ -2,7 +2,7 @@
 #include <VisualServer.hpp>
 
 namespace godot {
-const char* PixelpartShaders::shaderSourceCanvasItem = 
+const char* PixelpartShaders::shaderSourceCanvasItem =
 R""(
 uniform int u_ColorMode = 0;
 uniform float u_AlphaThreshold = 0.0;
@@ -46,7 +46,7 @@ vec4 blend(vec4 color1, vec4 color2, int mode) {
 	else if(mode == 8) {
 		outColor.rgb = color2.rgb;
 		outColor.a = color1.a;
-	}	
+	}
 
 	return outColor;
 }
@@ -61,7 +61,7 @@ void fragment() {
 }
 )"";
 
-const char* PixelpartShaders::shaderSourceSpatial = 
+const char* PixelpartShaders::shaderSourceSpatial =
 R""(
 uniform sampler2D u_Texture0 : hint_albedo;
 uniform int u_ColorMode = 0;
@@ -106,7 +106,7 @@ vec4 blend(vec4 color1, vec4 color2, int mode) {
 	else if(mode == 8) {
 		outColor.rgb = color2.rgb;
 		outColor.a = color1.a;
-	}	
+	}
 
 	return outColor;
 }
@@ -162,7 +162,7 @@ RID PixelpartShaders::get_shader_canvasitem(pixelpart::BlendMode blendMode) cons
 	if(static_cast<uint32_t>(blendMode) >= 3) {
 		return RID();
 	}
-	
+
 	return shaderCanvasItem[static_cast<uint32_t>(blendMode)];
 }
 RID PixelpartShaders::get_shader_spatial(pixelpart::BlendMode blendMode) const {

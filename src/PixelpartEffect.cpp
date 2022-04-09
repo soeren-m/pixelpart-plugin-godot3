@@ -2,12 +2,15 @@
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
 #include "RenderUtil.h"
+#include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
 #include <World.hpp>
 #include <Mesh.hpp>
+#include <ImageTexture.hpp>
 
 namespace godot {
 void PixelpartEffect::_register_methods() {
+	register_property<PixelpartEffect, Ref<PixelpartEffectResource>>("effect", &PixelpartEffect::set_effect, &PixelpartEffect::get_effect, nullptr);
 	register_property<PixelpartEffect, bool>("playing", &PixelpartEffect::play, &PixelpartEffect::is_playing, true);
 	register_property<PixelpartEffect, bool>("loop", &PixelpartEffect::set_loop, &PixelpartEffect::get_loop, false);
 	register_property<PixelpartEffect, float>("loop_time", &PixelpartEffect::set_loop_time, &PixelpartEffect::get_loop_time, 1.0f,
@@ -24,7 +27,6 @@ void PixelpartEffect::_register_methods() {
 		GODOT_PROPERTY_HINT_EXP_RANGE, "1.0,100.0,1.0");
 	register_property<PixelpartEffect, bool>("flip_h", &PixelpartEffect::set_flip_h, &PixelpartEffect::get_flip_h, false);
 	register_property<PixelpartEffect, bool>("flip_v", &PixelpartEffect::set_flip_v, &PixelpartEffect::get_flip_v, false);
-	register_property<PixelpartEffect, Ref<PixelpartEffectResource>>("effect", &PixelpartEffect::set_effect, &PixelpartEffect::get_effect, nullptr);
 	register_method("_init", &PixelpartEffect::_init);
 	register_method("_enter_tree", &PixelpartEffect::_enter_tree);
 	register_method("_exit_tree", &PixelpartEffect::_exit_tree);
@@ -65,14 +67,16 @@ PixelpartEffect::~PixelpartEffect() {
 		vs->free_rid(data.immediate);
 		vs->free_rid(data.instance);
 		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
 	}
 
 	for(InstanceData& data : spriteInstances) {
 		vs->free_rid(data.immediate);
 		vs->free_rid(data.instance);
 		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	}
+
+	for(auto& entry : textures) {
+		vs->free_rid(entry.second);
 	}
 }
 
@@ -106,7 +110,7 @@ void PixelpartEffect::_process(float dt) {
 			simulationTime -= timeStep;
 			particleEngine.step(timeStep);
 
-			if(loop) {		
+			if(loop) {
 				if(particleEngine.getTime() > loopTime) {
 					particleEngine.reset();
 				}
@@ -130,7 +134,7 @@ void PixelpartEffect::_update_draw() {
 	const std::vector<pixelpart::Sprite> sprites = effect->getSprites();
 	const std::vector<uint32_t> emitterOrder = effect->getParticleEmittersSortedByLayer();
 	const std::vector<uint32_t> spriteOrder = effect->getSpritesSortedByLayer();
-	
+
 	uint32_t maxLayer = 0;
 	if(!emitters.empty()) {
 		maxLayer = std::max(maxLayer, emitters[emitterOrder.back()].layer);
@@ -139,37 +143,39 @@ void PixelpartEffect::_update_draw() {
 		maxLayer = std::max(maxLayer, sprites[spriteOrder.back()].layer);
 	}
 
-	for(uint32_t l = 0, emitterIndex = 0, spriteIndex = 0; l <= maxLayer; l++) {
-		while(spriteIndex < spriteOrder.size()) {
-			const pixelpart::Sprite& sprite = sprites[spriteOrder[spriteIndex]];
+	for(uint32_t l = 0, e = 0, s = 0; l <= maxLayer; l++) {
+		while(s < spriteOrder.size()) {
+			const uint32_t spriteIndex = spriteOrder[s];
+			const pixelpart::Sprite& sprite = sprites[spriteIndex];
 			if(sprite.layer != l || spriteIndex >= spriteInstances.size()) {
 				break;
 			}
 
-			draw_sprite3d(
+			draw_sprite(
 				sprite,
 				spriteInstances[spriteIndex].instance,
 				spriteInstances[spriteIndex].immediate,
 				spriteInstances[spriteIndex].material,
-				spriteInstances[spriteIndex].texture);
+				textures.at(spriteInstances[spriteIndex].textureId));
 
-			spriteIndex++;
+			s++;
 		}
 
-		while(emitterIndex < emitterOrder.size()) {
-			const pixelpart::ParticleEmitter& emitter = emitters[emitterOrder[emitterIndex]];
+		while(e < emitterOrder.size()) {
+			const uint32_t emitterIndex = emitterOrder[e];
+			const pixelpart::ParticleEmitter& emitter = emitters[emitterIndex];
 			if(emitter.layer != l || emitterIndex >= emitterInstances.size()) {
 				break;
 			}
 
-			draw_emitter3d(
+			draw_emitter(
 				emitter,
 				emitterInstances[emitterIndex].instance,
 				emitterInstances[emitterIndex].immediate,
 				emitterInstances[emitterIndex].material,
-				emitterInstances[emitterIndex].texture);
+				textures.at(emitterInstances[emitterIndex].textureId));
 
-			emitterIndex++;
+			e++;
 		}
 	}
 }
@@ -245,36 +251,36 @@ float PixelpartEffect::get_import_scale() const {
 void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 	VisualServer* vs = VisualServer::get_singleton();
 
-	for(InstanceData& data : emitterInstances) {
-		vs->free_rid(data.immediate);
-		vs->free_rid(data.instance);
-		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	for(InstanceData& instanceData : emitterInstances) {
+		vs->free_rid(instanceData.immediate);
+		vs->free_rid(instanceData.instance);
+		vs->free_rid(instanceData.material);
 	}
 
-	for(InstanceData& data : spriteInstances) {
-		vs->free_rid(data.immediate);
-		vs->free_rid(data.instance);
-		vs->free_rid(data.material);
-		vs->free_rid(data.texture);
+	for(InstanceData& instanceData : spriteInstances) {
+		vs->free_rid(instanceData.immediate);
+		vs->free_rid(instanceData.instance);
+		vs->free_rid(instanceData.material);
+	}
+
+	for(auto& entry : textures) {
+		vs->free_rid(entry.second);
 	}
 
 	emitterInstances.clear();
 	spriteInstances.clear();
-
-	effectResource = effectRes;
-
 	particleEmitters.clear();
 	forceFields.clear();
 	colliders.clear();
 	sprites.clear();
+	textures.clear();
+
+	effectResource = effectRes;
 
 	if(effectResource.is_valid()) {
 		effectResource->load();
+
 		nativeEffect = effectResource->get_project().effect;
-
-		const pixelpart::ResourceDatabase& projectResources = effectResource->get_project_resources();
-
 		particleEngine.setEffect(&nativeEffect);
 
 		for(uint32_t i = 0; i < nativeEffect.getNumParticleEmitters(); i++) {
@@ -307,52 +313,36 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 
 		for(uint32_t i = 0; i < nativeEffect.getNumParticleEmitters(); i++) {
 			const pixelpart::ParticleEmitter& emitter = nativeEffect.getParticleEmitterByIndex(i);
-			const pixelpart::ImageResource& imageResource = effectResource->get_project_resources().images.at(emitter.particleSprite.id);
-
-			PoolByteArray imageData;
-			imageData.resize(imageResource.data.size());
-			memcpy(imageData.write().ptr(), imageResource.data.data(), imageResource.data.size());
-
-			Ref<Image> image;
-			image.instance();
-			image->create_from_data(imageResource.width, imageResource.height, false, Image::FORMAT_RGBA8, imageData);
-
-			RID immediate = vs->immediate_create();
-			RID instance = vs->instance_create();
-			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 
 			emitterInstances.push_back(InstanceData{
-				immediate,
-				instance,
-				material,
-				texture
+				vs->immediate_create(),
+				vs->instance_create(),
+				vs->material_create(),
+				emitter.particleSprite.id
 			});
 		}
 
 		for(uint32_t i = 0; i < nativeEffect.getNumSprites(); i++) {
 			const pixelpart::Sprite& sprite = nativeEffect.getSprite(i);
-			const pixelpart::ImageResource& imageResource = projectResources.images.at(sprite.image.id);
 
+			spriteInstances.push_back(InstanceData{
+				vs->immediate_create(),
+				vs->instance_create(),
+				vs->material_create(),
+				sprite.image.id
+			});
+		}
+
+		for(const auto& resource : effectResource->get_project_resources().images) {
 			PoolByteArray imageData;
-			imageData.resize(imageResource.data.size());
-			memcpy(imageData.write().ptr(), imageResource.data.data(), imageResource.data.size());
+			imageData.resize(resource.second.data.size());
+			memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
 
 			Ref<Image> image;
 			image.instance();
-			image->create_from_data(imageResource.width, imageResource.height, false, Image::FORMAT_RGBA8, imageData);
+			image->create_from_data(resource.second.width, resource.second.height, false, Image::FORMAT_RGBA8, imageData);
 
-			RID immediate = vs->immediate_create();
-			RID instance = vs->instance_create();
-			RID material = vs->material_create();
-			RID texture = vs->texture_create_from_image(image, Texture::FLAG_FILTER);
-
-			spriteInstances.push_back(InstanceData{
-				immediate,
-				instance,
-				material,
-				texture
-			});
+			textures[resource.first] = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
 		}
 	}
 	else {
@@ -396,7 +386,7 @@ Ref<PixelpartCollider> PixelpartEffect::get_collider(String name) const {
 Ref<PixelpartSprite> PixelpartEffect::get_sprite(String name) const {
 	CharString nameCharString = name.utf8();
 	std::string nameStdString = std::string(nameCharString.get_data(), nameCharString.length());
-	
+
 	if(sprites.count(nameStdString)) {
 		return sprites.at(nameStdString);
 	}
@@ -428,7 +418,7 @@ Ref<PixelpartParticleEmitter> PixelpartEffect::get_particle_emitter_by_index(int
 Ref<PixelpartForceField> PixelpartEffect::get_force_field_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasForceField(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getForceField(static_cast<uint32_t>(index)).name;
-		
+
 		if(forceFields.count(name)) {
 			return forceFields.at(name);
 		}
@@ -439,7 +429,7 @@ Ref<PixelpartForceField> PixelpartEffect::get_force_field_by_index(int index) co
 Ref<PixelpartCollider> PixelpartEffect::get_collider_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasCollider(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getCollider(static_cast<uint32_t>(index)).name;
-		
+
 		if(colliders.count(name)) {
 			return colliders.at(name);
 		}
@@ -450,7 +440,7 @@ Ref<PixelpartCollider> PixelpartEffect::get_collider_by_index(int index) const {
 Ref<PixelpartSprite> PixelpartEffect::get_sprite_by_index(int index) const {
 	if(index >= 0 && nativeEffect.hasSprite(static_cast<uint32_t>(index))) {
 		std::string name = nativeEffect.getSprite(static_cast<uint32_t>(index)).name;
-		
+
 		if(sprites.count(name)) {
 			return sprites.at(name);
 		}
@@ -459,7 +449,7 @@ Ref<PixelpartSprite> PixelpartEffect::get_sprite_by_index(int index) const {
 	return Ref<PixelpartSprite>();
 }
 
-void PixelpartEffect::draw_emitter3d(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture) {
+void PixelpartEffect::draw_emitter(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	vs->immediate_clear(immediate);
@@ -472,82 +462,47 @@ void PixelpartEffect::draw_emitter3d(const pixelpart::ParticleEmitter& emitter, 
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
 
-		if(emitter.renderer == pixelpart::ParticleEmitter::RendererType::trail && numParticles > 1) {
-			std::vector<pixelpart::vec2d> points(pixelpart::getNumParticleVertices(emitter, numParticles));
-			std::vector<pixelpart::vec2d> uvs(pixelpart::getNumParticleVertices(emitter, numParticles));
-			std::vector<pixelpart::vec4d> colors(pixelpart::getNumParticleVertices(emitter, numParticles));
+		pixelpart::ParticleMeshBuildInfo buildInfo(emitter, particles, numParticles);
 
-			pixelpart::generateParticleTrailTriangleStrip(
-				reinterpret_cast<pixelpart::floatd*>(points.data()),
-				reinterpret_cast<pixelpart::floatd*>(uvs.data()),
-				reinterpret_cast<pixelpart::floatd*>(colors.data()),
-				emitter,
-				particles,
-				numParticles,
+		PoolIntArray indexArray;
+		PoolVector2Array pointArray;
+		PoolVector2Array uvArray;
+		PoolColorArray colorArray;
+		indexArray.resize(buildInfo.numIndices);
+		pointArray.resize(buildInfo.numVertices);
+		uvArray.resize(buildInfo.numVertices);
+		colorArray.resize(buildInfo.numVertices);
+
+		if(emitter.renderer == pixelpart::ParticleEmitter::RendererType::trail && numParticles > 1) {
+			pixelpart::generateParticleTrailTriangles(
+				indexArray.write().ptr(),
+				reinterpret_cast<float*>(pointArray.write().ptr()),
+				reinterpret_cast<float*>(uvArray.write().ptr()),
+				reinterpret_cast<float*>(colorArray.write().ptr()),
+				buildInfo,
 				scaleX,
 				scaleY);
-
-			vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLE_STRIP);
-
-			for(uint32_t i = 0; i + 1 < points.size(); i++) {
-				vs->immediate_vertex(immediate, pp2gd(pixelpart::vec3d(points[i].x, points[i].y, 0.0)));
-				vs->immediate_uv(immediate, pp2gd(uvs[i]));
-				vs->immediate_color(immediate, pp2gd(colors[i]));
-			}
-
-			vs->immediate_end(immediate);
 		}
 		else {
-			PoolIntArray indexArray;
-			PoolVector2Array pointArray;
-			PoolVector2Array uvArray;
-			PoolColorArray colorArray;
-			indexArray.resize(static_cast<int>(numParticles * 6));
-			pointArray.resize(static_cast<int>(numParticles * 4));
-			uvArray.resize(static_cast<int>(numParticles * 4));
-			colorArray.resize(static_cast<int>(numParticles * 4));
-
 			pixelpart::generateParticleSpriteTriangles(
 				indexArray.write().ptr(),
 				reinterpret_cast<float*>(pointArray.write().ptr()),
 				reinterpret_cast<float*>(uvArray.write().ptr()),
 				reinterpret_cast<float*>(colorArray.write().ptr()),
-				emitter,
-				particles,
-				numParticles,
+				buildInfo,
 				scaleX,
 				scaleY);
-
-			vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLES);
-
-			for(uint32_t p = 0; p < numParticles; p++) {
-				vs->immediate_vertex(immediate, Vector3(pointArray[p * 4 + 0].x, pointArray[p * 4 + 0].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 0]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 0]);
-					
-				vs->immediate_vertex(immediate, Vector3(pointArray[p * 4 + 2].x, pointArray[p * 4 + 2].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 2]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 1]);
-			
-				vs->immediate_vertex(immediate,Vector3(pointArray[p * 4 + 1].x, pointArray[p * 4 + 1].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 1]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 1]);	
-				
-				vs->immediate_vertex(immediate, Vector3(pointArray[p * 4 + 0].x, pointArray[p * 4 + 0].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 0]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 0]);
-
-				vs->immediate_vertex(immediate, Vector3(pointArray[p * 4 + 3].x, pointArray[p * 4 + 3].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 3]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 3]);
-					
-				vs->immediate_vertex(immediate, Vector3(pointArray[p * 4 + 2].x, pointArray[p * 4 + 2].y, 0.0));
-				vs->immediate_uv(immediate, uvArray[p * 4 + 2]);
-				vs->immediate_color(immediate, colorArray[p * 4 + 2]);
-			}
-
-			vs->immediate_end(immediate);
 		}
+
+		vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLES);
+
+		for(int i = 0; i < indexArray.size(); i++) {
+			vs->immediate_uv(immediate, uvArray[indexArray[i]]);
+			vs->immediate_color(immediate, colorArray[indexArray[i]]);
+			vs->immediate_vertex(immediate, Vector3(pointArray[indexArray[i]].x, pointArray[indexArray[i]].y, 0.0f));
+		}
+
+		vs->immediate_end(immediate);
 
 		vs->material_set_shader(material, PixelpartShaders::get_instance()->get_shader_spatial(emitter.blendMode));
 		vs->material_set_param(material, "u_Texture0", spriteTexture);
@@ -560,7 +515,7 @@ void PixelpartEffect::draw_emitter3d(const pixelpart::ParticleEmitter& emitter, 
 		vs->instance_geometry_set_material_override(instance, material);
 	}
 }
-void PixelpartEffect::draw_sprite3d(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture) {
+void PixelpartEffect::draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	vs->immediate_clear(immediate);
@@ -571,7 +526,9 @@ void PixelpartEffect::draw_sprite3d(const pixelpart::Sprite& sprite, RID instanc
 		const pixelpart::ImageResource& imageResource = effectResource->get_project_resources().images.at(sprite.image.id);
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
-		
+
+		pixelpart::SpriteMeshBuildInfo buildInfo(sprite, imageResource, particleEngine.getTime());
+
 		Vector2 points[4];
 		Vector2 uvs[4];
 		Color colors[4];
@@ -580,38 +537,31 @@ void PixelpartEffect::draw_sprite3d(const pixelpart::Sprite& sprite, RID instanc
 			reinterpret_cast<float*>(points),
 			reinterpret_cast<float*>(uvs),
 			reinterpret_cast<float*>(colors),
-			sprite,
-			static_cast<pixelpart::floatd>(imageResource.width) / static_cast<pixelpart::floatd>(imageResource.height),
-			particleEngine.getTime(),
+			buildInfo,
 			scaleX,
 			scaleY);
-		
+
 		vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLES);
 
-		vs->immediate_vertex(immediate, Vector3(points[0].x, points[0].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[0]);
 		vs->immediate_color(immediate, colors[0]);
-
-		vs->immediate_vertex(immediate, Vector3(points[1].x, points[1].y, 0.0f));
+		vs->immediate_vertex(immediate, Vector3(points[0].x, points[0].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[1]);
 		vs->immediate_color(immediate, colors[1]);
-
-		vs->immediate_vertex(immediate, Vector3(points[3].x, points[3].y, 0.0f));
+		vs->immediate_vertex(immediate, Vector3(points[1].x, points[1].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[3]);
 		vs->immediate_color(immediate, colors[3]);
-
-		vs->immediate_vertex(immediate, Vector3(points[1].x, points[1].y, 0.0f));
+		vs->immediate_vertex(immediate, Vector3(points[3].x, points[3].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[1]);
 		vs->immediate_color(immediate, colors[1]);
-
-		vs->immediate_vertex(immediate, Vector3(points[2].x, points[2].y, 0.0f));
+		vs->immediate_vertex(immediate, Vector3(points[1].x, points[1].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[2]);
 		vs->immediate_color(immediate, colors[2]);
-
-		vs->immediate_vertex(immediate, Vector3(points[3].x, points[3].y, 0.0f));
+		vs->immediate_vertex(immediate, Vector3(points[2].x, points[2].y, 0.0f));	
 		vs->immediate_uv(immediate, uvs[3]);
 		vs->immediate_color(immediate, colors[3]);
-	
+		vs->immediate_vertex(immediate, Vector3(points[3].x, points[3].y, 0.0f));
+
 		vs->immediate_end(immediate);
 
 		vs->material_set_shader(material, PixelpartShaders::get_instance()->get_shader_spatial(sprite.blendMode));

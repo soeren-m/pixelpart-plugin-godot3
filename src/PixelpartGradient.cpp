@@ -23,7 +23,7 @@ void PixelpartGradient::_register_methods() {
 }
 
 PixelpartGradient::PixelpartGradient() {
-	
+
 }
 
 void PixelpartGradient::_init() {

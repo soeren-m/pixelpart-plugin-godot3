@@ -90,7 +90,7 @@ bool PixelpartCollider::is_active() const {
 }
 float PixelpartCollider::get_local_time() const {
 	return static_cast<float>(std::fmod(
-		nativeParticleEngine->getTime() - nativeCollider->lifetimeStart, nativeCollider->lifetimeDuration) / nativeCollider->lifetimeDuration); 
+		nativeParticleEngine->getTime() - nativeCollider->lifetimeStart, nativeCollider->lifetimeDuration) / nativeCollider->lifetimeDuration);
 }
 
 void PixelpartCollider::add_point(Vector2 point) {
@@ -99,7 +99,7 @@ void PixelpartCollider::add_point(Vector2 point) {
 		nativeParticleEngine->onColliderUpdate();
 	}
 }
-void PixelpartCollider::set_point(int index, Vector2 point) {	
+void PixelpartCollider::set_point(int index, Vector2 point) {
 	if(nativeCollider) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			nativeCollider->points[index] = gd2pp(point / effectResource->get_scale());
@@ -107,7 +107,7 @@ void PixelpartCollider::set_point(int index, Vector2 point) {
 		}
 	}
 }
-void PixelpartCollider::remove_point(int index) {	
+void PixelpartCollider::remove_point(int index) {
 	if(nativeCollider) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			nativeCollider->points.erase(nativeCollider->points.begin() + index);
@@ -115,7 +115,7 @@ void PixelpartCollider::remove_point(int index) {
 		}
 	}
 }
-Vector2 PixelpartCollider::get_point(int index) const {	
+Vector2 PixelpartCollider::get_point(int index) const {
 	if(nativeCollider) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			return pp2gd(nativeCollider->points[index]) * effectResource->get_scale();
@@ -124,13 +124,14 @@ Vector2 PixelpartCollider::get_point(int index) const {
 
 	return Vector2(0.0f, 0.0f);
 }
-int PixelpartCollider::get_num_points() const {	
+int PixelpartCollider::get_num_points() const {
 	if(nativeCollider) {
 		return static_cast<int>(nativeCollider->points.size());
 	}
 
 	return 0;
 }
+
 Ref<PixelpartCurve> PixelpartCollider::get_bounce() const {
 	if(nativeCollider) {
 		Ref<PixelpartCurve> curve;

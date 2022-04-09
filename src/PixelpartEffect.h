@@ -7,12 +7,9 @@
 #include "PixelpartCollider.h"
 #include "PixelpartSprite.h"
 #include "ParticleEngine.h"
-#include <memory>
 #include <unordered_map>
 #include <Godot.hpp>
 #include <Spatial.hpp>
-#include <VisualServer.hpp>
-#include <ImageTexture.hpp>
 
 namespace godot {
 class PixelpartEffect : public Spatial {
@@ -75,11 +72,11 @@ private:
 		RID immediate;
 		RID instance;
 		RID material;
-		RID texture;
+		std::string textureId;
 	};
 
-	void draw_emitter3d(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture);
-	void draw_sprite3d(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture);
+	void draw_emitter(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture);
+	void draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture);
 
 	Ref<PixelpartEffectResource> effectResource;
 	pixelpart::Effect nativeEffect;
@@ -88,6 +85,7 @@ private:
 	std::unordered_map<std::string, Ref<PixelpartForceField>> forceFields;
 	std::unordered_map<std::string, Ref<PixelpartCollider>> colliders;
 	std::unordered_map<std::string, Ref<PixelpartSprite>> sprites;
+
 	pixelpart::ParticleEngine particleEngine;
 	float simulationTime = 0.0f;
 
@@ -102,6 +100,7 @@ private:
 
 	std::vector<InstanceData> emitterInstances;
 	std::vector<InstanceData> spriteInstances;
+	std::unordered_map<std::string, RID> textures;
 };
 }
 

@@ -24,7 +24,7 @@ public:
 
 private:
 	static PixelpartShaders* instance;
-	
+
 	static const char* shaderSourceCanvasItem;
 	static const char* shaderSourceSpatial;
 

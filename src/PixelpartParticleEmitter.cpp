@@ -61,7 +61,7 @@ PixelpartParticleEmitter::PixelpartParticleEmitter() {
 }
 
 void PixelpartParticleEmitter::_init() {
-	
+
 }
 void PixelpartParticleEmitter::init(Ref<PixelpartEffectResource> resource, pixelpart::ParticleEmitter* particleEmitter, pixelpart::ParticleEngine* engine) {
 	effectResource = resource;
@@ -146,12 +146,12 @@ void PixelpartParticleEmitter::set_shape(int type) {
 		nativeParticleEmitter->shape = static_cast<pixelpart::ParticleEmitter::Shape>(type);
 	}
 }
-void PixelpartParticleEmitter::set_distribution(int mode) {	
+void PixelpartParticleEmitter::set_distribution(int mode) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->distribution = static_cast<pixelpart::ParticleEmitter::Distribution>(mode);
 	}
 }
-void PixelpartParticleEmitter::set_spawn_mode(int mode) {	
+void PixelpartParticleEmitter::set_spawn_mode(int mode) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->spawnMode = static_cast<pixelpart::ParticleEmitter::SpawnMode>(mode);
 	}
@@ -161,21 +161,21 @@ void PixelpartParticleEmitter::set_burst(bool burst) {
 		nativeParticleEmitter->burst = burst;
 	}
 }
-int PixelpartParticleEmitter::get_shape() const {	
+int PixelpartParticleEmitter::get_shape() const {
 	if(nativeParticleEmitter) {
 		return static_cast<int>(nativeParticleEmitter->shape);
 	}
 
 	return static_cast<int>(pixelpart::ParticleEmitter::Shape::point);
 }
-int PixelpartParticleEmitter::get_distribution() const {	
+int PixelpartParticleEmitter::get_distribution() const {
 	if(nativeParticleEmitter) {
 		return static_cast<int>(nativeParticleEmitter->distribution);
 	}
 
 	return static_cast<int>(pixelpart::ParticleEmitter::Distribution::uniform);
 }
-int PixelpartParticleEmitter::get_spawn_mode() const {	
+int PixelpartParticleEmitter::get_spawn_mode() const {
 	if(nativeParticleEmitter) {
 		return static_cast<int>(nativeParticleEmitter->spawnMode);
 	}
@@ -200,7 +200,7 @@ void PixelpartParticleEmitter::set_blend_mode(int mode) {
 		nativeParticleEmitter->blendMode = static_cast<pixelpart::BlendMode>(mode);
 	}
 }
-void PixelpartParticleEmitter::set_color_mode(int mode) {	
+void PixelpartParticleEmitter::set_color_mode(int mode) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->colorMode = static_cast<pixelpart::ColorMode>(mode);
 	}
@@ -210,7 +210,7 @@ void PixelpartParticleEmitter::set_layer(int layer) {
 		nativeParticleEmitter->layer = static_cast<uint32_t>(std::max(layer, 0));
 	}
 }
-void PixelpartParticleEmitter::set_visible(bool visible) {	
+void PixelpartParticleEmitter::set_visible(bool visible) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->visible = visible;
 	}
@@ -251,7 +251,7 @@ bool PixelpartParticleEmitter::is_visible() const {
 	return false;
 }
 
-void PixelpartParticleEmitter::set_particle_rotation_mode(int mode) {	
+void PixelpartParticleEmitter::set_particle_rotation_mode(int mode) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleRotationMode = static_cast<pixelpart::ParticleEmitter::RotationMode>(mode);
 	}
@@ -264,12 +264,12 @@ int PixelpartParticleEmitter::get_particle_rotation_mode() const {
 	return static_cast<int>(pixelpart::ParticleEmitter::RotationMode::angle);
 }
 
-void PixelpartParticleEmitter::set_particle_lifespan_variance(float variance) {	
+void PixelpartParticleEmitter::set_particle_lifespan_variance(float variance) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleLifespanVariance = static_cast<pixelpart::floatd>(variance);
 	}
 }
-void PixelpartParticleEmitter::set_particle_initial_velocity_variance(float variance) {	
+void PixelpartParticleEmitter::set_particle_initial_velocity_variance(float variance) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleInitialVelocityVariance = static_cast<pixelpart::floatd>(variance);
 	}
@@ -279,22 +279,21 @@ void PixelpartParticleEmitter::set_particle_rotation_variance(float variance) {
 		nativeParticleEmitter->particleRotationVariance = static_cast<pixelpart::floatd>(variance);
 	}
 }
-void PixelpartParticleEmitter::set_particle_angular_velocity_variance(float variance) {	
+void PixelpartParticleEmitter::set_particle_angular_velocity_variance(float variance) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleAngularVelocityVariance = static_cast<pixelpart::floatd>(variance);
 	}
 }
-void PixelpartParticleEmitter::set_particle_size_variance(float variance) {	
+void PixelpartParticleEmitter::set_particle_size_variance(float variance) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleSizeVariance = static_cast<pixelpart::floatd>(variance);
 	}
 }
-void PixelpartParticleEmitter::set_particle_opacity_variance(float variance) {	
+void PixelpartParticleEmitter::set_particle_opacity_variance(float variance) {
 	if(nativeParticleEmitter) {
 		nativeParticleEmitter->particleOpacityVariance = static_cast<pixelpart::floatd>(variance);
 	}
 }
-
 float PixelpartParticleEmitter::get_particle_lifespan_variance() const {
 	if(nativeParticleEmitter) {
 		return static_cast<float>(nativeParticleEmitter->particleLifespanVariance);
@@ -338,7 +337,7 @@ float PixelpartParticleEmitter::get_particle_opacity_variance() const {
 	return 0.0f;
 }
 
-Ref<PixelpartCurve> PixelpartParticleEmitter::get_width() const {	
+Ref<PixelpartCurve> PixelpartParticleEmitter::get_width() const {
 	if(nativeParticleEmitter) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
@@ -415,7 +414,7 @@ Ref<PixelpartCurve> PixelpartParticleEmitter::get_particle_lifespan() const {
 
 	return Ref<PixelpartCurve>();
 }
-Ref<PixelpartPath> PixelpartParticleEmitter::get_motion_path() const {	
+Ref<PixelpartPath> PixelpartParticleEmitter::get_motion_path() const {
 	if(nativeParticleEmitter) {
 		Ref<PixelpartPath> path;
 		path.instance();

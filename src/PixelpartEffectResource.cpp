@@ -34,7 +34,7 @@ void PixelpartEffectResource::import(String filepath) {
 	else {
 		Godot::print_error(String("Failed to open file: ") + filepath, __FUNCTION__, "", __LINE__);
 	}
-	
+
 	file->close();
 	loaded = false;
 }

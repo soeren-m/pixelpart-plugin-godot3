@@ -22,7 +22,7 @@ void PixelpartCurve::_register_methods() {
 }
 
 PixelpartCurve::PixelpartCurve() {
-	
+
 }
 
 void PixelpartCurve::_init() {

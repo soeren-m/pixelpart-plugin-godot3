@@ -7,12 +7,9 @@
 #include "PixelpartCollider.h"
 #include "PixelpartSprite.h"
 #include "ParticleEngine.h"
-#include <memory>
 #include <unordered_map>
 #include <Godot.hpp>
 #include <Node2D.hpp>
-#include <VisualServer.hpp>
-#include <ImageTexture.hpp>
 
 namespace godot {
 class PixelpartEffect2D : public Node2D {
@@ -74,11 +71,11 @@ private:
 	struct InstanceData {
 		RID canvasItem;
 		RID material;
-		RID texture;
+		std::string textureId;
 	};
-	
-	void draw_emitter2d(const pixelpart::ParticleEmitter& emitter, RID canvasItem, RID material, RID spriteTexture);
-	void draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID material, RID spriteTexture);
+
+	void draw_emitter2d(const pixelpart::ParticleEmitter& emitter, RID canvasItem, RID material, RID texture);
+	void draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID material, RID texture);
 
 	Ref<PixelpartEffectResource> effectResource;
 	pixelpart::Effect nativeEffect;
@@ -102,6 +99,7 @@ private:
 
 	std::vector<InstanceData> emitterInstances;
 	std::vector<InstanceData> spriteInstances;
+	std::unordered_map<std::string, RID> textures;
 };
 }
 
