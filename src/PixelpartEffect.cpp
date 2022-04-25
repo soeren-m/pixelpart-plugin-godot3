@@ -1,7 +1,6 @@
 #include "PixelpartEffect.h"
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
-#include "RenderUtil.h"
 #include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
 #include <World.hpp>
@@ -63,16 +62,16 @@ PixelpartEffect::PixelpartEffect() {
 PixelpartEffect::~PixelpartEffect() {
 	VisualServer* vs = VisualServer::get_singleton();
 
-	for(InstanceData& data : emitterInstances) {
-		vs->free_rid(data.immediate);
-		vs->free_rid(data.instance);
-		vs->free_rid(data.material);
+	for(EmitterInstance& inst : emitterInstances) {
+		vs->free_rid(inst.immediate);
+		vs->free_rid(inst.instance);
+		vs->free_rid(inst.material);
 	}
 
-	for(InstanceData& data : spriteInstances) {
-		vs->free_rid(data.immediate);
-		vs->free_rid(data.instance);
-		vs->free_rid(data.material);
+	for(SpriteInstance& inst : spriteInstances) {
+		vs->free_rid(inst.immediate);
+		vs->free_rid(inst.instance);
+		vs->free_rid(inst.material);
 	}
 
 	for(auto& entry : textures) {
@@ -170,6 +169,7 @@ void PixelpartEffect::_update_draw() {
 
 			draw_emitter(
 				emitter,
+				emitterInstances[emitterIndex].meshBuilder,
 				emitterInstances[emitterIndex].instance,
 				emitterInstances[emitterIndex].immediate,
 				emitterInstances[emitterIndex].material,
@@ -251,16 +251,16 @@ float PixelpartEffect::get_import_scale() const {
 void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 	VisualServer* vs = VisualServer::get_singleton();
 
-	for(InstanceData& instanceData : emitterInstances) {
-		vs->free_rid(instanceData.immediate);
-		vs->free_rid(instanceData.instance);
-		vs->free_rid(instanceData.material);
+	for(EmitterInstance& inst : emitterInstances) {
+		vs->free_rid(inst.immediate);
+		vs->free_rid(inst.instance);
+		vs->free_rid(inst.material);
 	}
 
-	for(InstanceData& instanceData : spriteInstances) {
-		vs->free_rid(instanceData.immediate);
-		vs->free_rid(instanceData.instance);
-		vs->free_rid(instanceData.material);
+	for(SpriteInstance& inst : spriteInstances) {
+		vs->free_rid(inst.immediate);
+		vs->free_rid(inst.instance);
+		vs->free_rid(inst.material);
 	}
 
 	for(auto& entry : textures) {
@@ -314,7 +314,8 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 		for(uint32_t i = 0; i < nativeEffect.getNumParticleEmitters(); i++) {
 			const pixelpart::ParticleEmitter& emitter = nativeEffect.getParticleEmitterByIndex(i);
 
-			emitterInstances.push_back(InstanceData{
+			emitterInstances.push_back(EmitterInstance{
+				pixelpart::ParticleMeshBuilder(),
 				vs->immediate_create(),
 				vs->instance_create(),
 				vs->material_create(),
@@ -325,7 +326,7 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 		for(uint32_t i = 0; i < nativeEffect.getNumSprites(); i++) {
 			const pixelpart::Sprite& sprite = nativeEffect.getSprite(i);
 
-			spriteInstances.push_back(InstanceData{
+			spriteInstances.push_back(SpriteInstance{
 				vs->immediate_create(),
 				vs->instance_create(),
 				vs->material_create(),
@@ -449,7 +450,7 @@ Ref<PixelpartSprite> PixelpartEffect::get_sprite_by_index(int index) const {
 	return Ref<PixelpartSprite>();
 }
 
-void PixelpartEffect::draw_emitter(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture) {
+void PixelpartEffect::draw_emitter(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID instance, RID immediate, RID material, RID spriteTexture) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	vs->immediate_clear(immediate);
@@ -462,37 +463,24 @@ void PixelpartEffect::draw_emitter(const pixelpart::ParticleEmitter& emitter, RI
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
 
-		pixelpart::ParticleMeshBuildInfo buildInfo(emitter, particles, numParticles);
+		meshBuilder.update(emitter, particles, numParticles, particleEngine.getTime());
 
 		PoolIntArray indexArray;
 		PoolVector2Array pointArray;
 		PoolVector2Array uvArray;
 		PoolColorArray colorArray;
-		indexArray.resize(buildInfo.numIndices);
-		pointArray.resize(buildInfo.numVertices);
-		uvArray.resize(buildInfo.numVertices);
-		colorArray.resize(buildInfo.numVertices);
+		indexArray.resize(meshBuilder.getNumIndices());
+		pointArray.resize(meshBuilder.getNumVertices());
+		uvArray.resize(meshBuilder.getNumVertices());
+		colorArray.resize(meshBuilder.getNumVertices());
 
-		if(emitter.renderer == pixelpart::ParticleEmitter::RendererType::trail && numParticles > 1) {
-			pixelpart::generateParticleTrailTriangles(
-				indexArray.write().ptr(),
-				reinterpret_cast<float*>(pointArray.write().ptr()),
-				reinterpret_cast<float*>(uvArray.write().ptr()),
-				reinterpret_cast<float*>(colorArray.write().ptr()),
-				buildInfo,
-				scaleX,
-				scaleY);
-		}
-		else {
-			pixelpart::generateParticleSpriteTriangles(
-				indexArray.write().ptr(),
-				reinterpret_cast<float*>(pointArray.write().ptr()),
-				reinterpret_cast<float*>(uvArray.write().ptr()),
-				reinterpret_cast<float*>(colorArray.write().ptr()),
-				buildInfo,
-				scaleX,
-				scaleY);
-		}
+		meshBuilder.build(
+			indexArray.write().ptr(),
+			reinterpret_cast<float*>(pointArray.write().ptr()),
+			reinterpret_cast<float*>(uvArray.write().ptr()),
+			reinterpret_cast<float*>(colorArray.write().ptr()),
+			scaleX,
+			scaleY);
 
 		vs->immediate_begin(immediate, Mesh::PRIMITIVE_TRIANGLES);
 
@@ -527,17 +515,16 @@ void PixelpartEffect::draw_sprite(const pixelpart::Sprite& sprite, RID instance,
 		const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 		const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
 
-		pixelpart::SpriteMeshBuildInfo buildInfo(sprite, imageResource, particleEngine.getTime());
+		pixelpart::SpriteMeshBuilder meshBuilder(sprite, imageResource, particleEngine.getTime());
 
 		Vector2 points[4];
 		Vector2 uvs[4];
 		Color colors[4];
-		pixelpart::generateSpriteTriangles<int, float>(
+		meshBuilder.build<int, float>(
 			nullptr,
 			reinterpret_cast<float*>(points),
 			reinterpret_cast<float*>(uvs),
 			reinterpret_cast<float*>(colors),
-			buildInfo,
 			scaleX,
 			scaleY);
 

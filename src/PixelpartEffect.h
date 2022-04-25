@@ -7,7 +7,7 @@
 #include "PixelpartCollider.h"
 #include "PixelpartSprite.h"
 #include "ParticleEngine.h"
-#include <unordered_map>
+#include "RenderUtil.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
 
@@ -68,14 +68,21 @@ public:
 	Ref<PixelpartSprite> get_sprite_by_index(int index) const;
 
 private:
-	struct InstanceData {
+	struct EmitterInstance {
+		pixelpart::ParticleMeshBuilder meshBuilder;
+		RID immediate;
+		RID instance;
+		RID material;
+		std::string textureId;
+	};
+	struct SpriteInstance {
 		RID immediate;
 		RID instance;
 		RID material;
 		std::string textureId;
 	};
 
-	void draw_emitter(const pixelpart::ParticleEmitter& emitter, RID instance, RID immediate, RID material, RID spriteTexture);
+	void draw_emitter(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID instance, RID immediate, RID material, RID spriteTexture);
 	void draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture);
 
 	Ref<PixelpartEffectResource> effectResource;
@@ -98,8 +105,8 @@ private:
 	bool flipH = false;
 	bool flipV = false;
 
-	std::vector<InstanceData> emitterInstances;
-	std::vector<InstanceData> spriteInstances;
+	std::vector<EmitterInstance> emitterInstances;
+	std::vector<SpriteInstance> spriteInstances;
 	std::unordered_map<std::string, RID> textures;
 };
 }
