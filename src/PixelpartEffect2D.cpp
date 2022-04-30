@@ -79,12 +79,13 @@ void PixelpartEffect2D::_init() {
 	simulationTime = 0.0f;
 
 	playing = true;
-	flipH = false;
-	flipV = true;
 	loop = false;
 	loopTime = 1.0f;
 	speed = 1.0f;
 	timeStep = 1.0f / 60.0f;
+
+	flipH = false;
+	flipV = true;
 }
 void PixelpartEffect2D::_enter_tree() {
 	VisualServer::get_singleton()->connect("frame_pre_draw", this, "_update_draw");
@@ -116,7 +117,6 @@ void PixelpartEffect2D::_process(float dt) {
 void PixelpartEffect2D::_update_draw() {
 	Viewport* viewport = get_viewport();
 	if(!viewport) {
-		Godot::print_error(String("No viewport available"), __FUNCTION__, "", __LINE__);
 		return;
 	}
 
@@ -221,11 +221,11 @@ float PixelpartEffect2D::get_frame_rate() const {
 	return 1.0f / timeStep;
 }
 
-void PixelpartEffect2D::set_flip_h(bool flip_h) {
-	flipH =  flip_h;
+void PixelpartEffect2D::set_flip_h(bool flip) {
+	flipH = flip;
 }
-void PixelpartEffect2D::set_flip_v(bool flip_v) {
-	flipV = flip_v;
+void PixelpartEffect2D::set_flip_v(bool flip) {
+	flipV = flip;
 }
 bool PixelpartEffect2D::get_flip_h() const {
 	return flipH;

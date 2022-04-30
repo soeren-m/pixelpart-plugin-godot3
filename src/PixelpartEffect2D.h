@@ -47,8 +47,8 @@ public:
 	void set_frame_rate(float r);
 	float get_frame_rate() const;
 
-	void set_flip_h(bool flip_h);
-	void set_flip_v(bool flip_v);
+	void set_flip_h(bool flip);
+	void set_flip_v(bool flip);
 	bool get_flip_h() const;
 	bool get_flip_v() const;
 

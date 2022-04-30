@@ -4,6 +4,8 @@
 #include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
 #include <World.hpp>
+#include <Viewport.hpp>
+#include <Camera.hpp>
 #include <Mesh.hpp>
 #include <ImageTexture.hpp>
 
@@ -26,6 +28,10 @@ void PixelpartEffect::_register_methods() {
 		GODOT_PROPERTY_HINT_EXP_RANGE, "1.0,100.0,1.0");
 	register_property<PixelpartEffect, bool>("flip_h", &PixelpartEffect::set_flip_h, &PixelpartEffect::get_flip_h, false);
 	register_property<PixelpartEffect, bool>("flip_v", &PixelpartEffect::set_flip_v, &PixelpartEffect::get_flip_v, false);
+	register_property<PixelpartEffect, int>("billboard_mode", &PixelpartEffect::set_billboard_mode, &PixelpartEffect::get_billboard_mode, SpatialMaterial::BILLBOARD_DISABLED,
+		GODOT_METHOD_RPC_MODE_DISABLED,
+		GODOT_PROPERTY_USAGE_DEFAULT,
+		GODOT_PROPERTY_HINT_ENUM, "Disabled,Enabled,Y-Billboard");
 	register_method("_init", &PixelpartEffect::_init);
 	register_method("_enter_tree", &PixelpartEffect::_enter_tree);
 	register_method("_exit_tree", &PixelpartEffect::_exit_tree);
@@ -83,12 +89,14 @@ void PixelpartEffect::_init() {
 	simulationTime = 0.0f;
 
 	playing = true;
-	flipH = false;
-	flipV = false;
 	loop = false;
 	loopTime = 1.0f;
 	speed = 1.0f;
 	timeStep = 1.0f / 60.0f;
+
+	flipH = false;
+	flipV = false;
+	billboardMode = SpatialMaterial::BILLBOARD_DISABLED;
 }
 void PixelpartEffect::_enter_tree() {
 	VisualServer::get_singleton()->connect("frame_pre_draw", this, "_update_draw");
@@ -120,7 +128,6 @@ void PixelpartEffect::_process(float dt) {
 void PixelpartEffect::_update_draw() {
 	Viewport* viewport = get_viewport();
 	if(!viewport) {
-		Godot::print_error(String("No viewport available"), __FUNCTION__, "", __LINE__);
 		return;
 	}
 
@@ -227,17 +234,26 @@ float PixelpartEffect::get_frame_rate() const {
 	return 1.0f / timeStep;
 }
 
-void PixelpartEffect::set_flip_h(bool flip_h) {
-	flipH =  flip_h;
+void PixelpartEffect::set_flip_h(bool flip) {
+	flipH = flip;
 }
-void PixelpartEffect::set_flip_v(bool flip_v) {
-	flipV = flip_v;
+void PixelpartEffect::set_flip_v(bool flip) {
+	flipV = flip;
+}
+void PixelpartEffect::set_billboard_mode(int mode) {
+	billboardMode = mode;
+	if(billboardMode != SpatialMaterial::BILLBOARD_ENABLED && billboardMode != SpatialMaterial::BILLBOARD_FIXED_Y) {
+		billboardMode = SpatialMaterial::BILLBOARD_DISABLED;
+	}
 }
 bool PixelpartEffect::get_flip_h() const {
 	return flipH;
 }
 bool PixelpartEffect::get_flip_v() const {
 	return flipV;
+}
+int PixelpartEffect::get_billboard_mode() const {
+	return billboardMode;
 }
 
 float PixelpartEffect::get_import_scale() const {
@@ -498,9 +514,9 @@ void PixelpartEffect::draw_emitter(const pixelpart::ParticleEmitter& emitter, pi
 		vs->material_set_param(material, "u_AlphaThreshold", emitter.alphaThreshold);
 
 		vs->instance_set_base(instance, immediate);
-		vs->instance_set_scenario(instance, get_world()->get_scenario());
-		vs->instance_set_transform(instance, get_global_transform());
 		vs->instance_geometry_set_material_override(instance, material);
+		vs->instance_set_scenario(instance, get_world()->get_scenario());
+		vs->instance_set_transform(instance, get_final_transform());
 	}
 }
 void PixelpartEffect::draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture) {
@@ -557,9 +573,36 @@ void PixelpartEffect::draw_sprite(const pixelpart::Sprite& sprite, RID instance,
 		vs->material_set_param(material, "u_AlphaThreshold", 0.0f);
 
 		vs->instance_set_base(instance, immediate);
-		vs->instance_set_scenario(instance, get_world()->get_scenario());
-		vs->instance_set_transform(instance, get_global_transform());
 		vs->instance_geometry_set_material_override(instance, material);
+		vs->instance_set_scenario(instance, get_world()->get_scenario());
+		vs->instance_set_transform(instance, get_final_transform());
 	}
+}
+
+Transform PixelpartEffect::get_final_transform() {
+	Viewport* viewport = get_viewport();
+	Transform finalTransform = get_global_transform();
+
+	if(viewport && viewport->get_camera()) {
+		if(billboardMode == SpatialMaterial::BILLBOARD_ENABLED) {
+			Transform cameraTransform = viewport->get_camera()->get_global_transform();
+
+			finalTransform.set_look_at(
+				finalTransform.get_origin(),
+				finalTransform.get_origin() * 2.0f - cameraTransform.origin,
+				Vector3::UP);
+		}
+		else if(billboardMode == SpatialMaterial::BILLBOARD_FIXED_Y) {
+			Transform cameraTransform = viewport->get_camera()->get_global_transform();
+			cameraTransform.origin.y = 0.0f;
+	
+			finalTransform.set_look_at(
+				finalTransform.get_origin(),
+				finalTransform.get_origin() * 2.0f - cameraTransform.origin,
+				Vector3::UP);
+		}
+	}
+
+	return finalTransform;
 }
 }

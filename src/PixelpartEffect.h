@@ -10,6 +10,7 @@
 #include "RenderUtil.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
+#include <SpatialMaterial.hpp>
 
 namespace godot {
 class PixelpartEffect : public Spatial {
@@ -47,10 +48,12 @@ public:
 	void set_frame_rate(float r);
 	float get_frame_rate() const;
 
-	void set_flip_h(bool flip_h);
-	void set_flip_v(bool flip_v);
+	void set_flip_h(bool flip);
+	void set_flip_v(bool flip);
+	void set_billboard_mode(int mode);
 	bool get_flip_h() const;
 	bool get_flip_v() const;
+	int get_billboard_mode() const;
 
 	float get_import_scale() const;
 
@@ -85,6 +88,8 @@ private:
 	void draw_emitter(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID instance, RID immediate, RID material, RID spriteTexture);
 	void draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID material, RID spriteTexture);
 
+	Transform get_final_transform();
+
 	Ref<PixelpartEffectResource> effectResource;
 	pixelpart::Effect nativeEffect;
 
@@ -104,6 +109,7 @@ private:
 
 	bool flipH = false;
 	bool flipV = false;
+	int billboardMode = SpatialMaterial::BILLBOARD_DISABLED;
 
 	std::vector<EmitterInstance> emitterInstances;
 	std::vector<SpriteInstance> spriteInstances;
