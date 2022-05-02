@@ -14,3 +14,7 @@ script = ExtResource( 4 )
 [node name="SampleEffect" type="Spatial" parent="TestNode3D"]
 script = ExtResource( 1 )
 effect = ExtResource( 2 )
+billboard_mode = 1
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( -0.83616, -0.385754, 0.389911, 0.114681, 0.572214, 0.812047, -0.536363, 0.723716, -0.434223, 11.9476, 25.559, -16.0216 )
