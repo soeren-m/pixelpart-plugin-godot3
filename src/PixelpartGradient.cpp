@@ -125,7 +125,7 @@ int PixelpartGradient::get_interpolation() const {
 		return static_cast<int>(nativeGradient->getInterpolation());
 	}
 
-	return static_cast<int>(pixelpart::CurveInterpolation::step);
+	return static_cast<int>(pixelpart::CurveInterpolation::none);
 }
 
 void PixelpartGradient::enable_adaptive_cache() {
@@ -154,10 +154,10 @@ void PixelpartGradient::update_simulation() {
 	}
 
 	if(objectType == ObjectType::force_field) {
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 	else if(objectType == ObjectType::collider) {
-		nativeParticleEngine->onColliderUpdate();
+		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 }

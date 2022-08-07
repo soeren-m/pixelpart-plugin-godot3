@@ -7,9 +7,9 @@
 #include "PixelpartEffect.h"
 #include "PixelpartEffect2D.h"
 #include "PixelpartParticleEmitter.h"
+#include "PixelpartSprite.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
-#include "PixelpartSprite.h"
 
 extern "C" void GDN_EXPORT godot_gdnative_init(godot_gdnative_init_options *o) {
 	godot::Godot::gdnative_init(o);
@@ -30,7 +30,7 @@ extern "C" void GDN_EXPORT godot_nativescript_init(void *handle) {
 	godot::register_class<godot::PixelpartEffect>();
 	godot::register_class<godot::PixelpartEffect2D>();
 	godot::register_class<godot::PixelpartParticleEmitter>();
+	godot::register_class<godot::PixelpartSprite>();
 	godot::register_class<godot::PixelpartForceField>();
 	godot::register_class<godot::PixelpartCollider>();
-	godot::register_class<godot::PixelpartSprite>();
 }

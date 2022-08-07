@@ -38,25 +38,21 @@ public:
 	void set_shape(int type);
 	void set_distribution(int mode);
 	void set_spawn_mode(int mode);
-	void set_burst(bool burst);
+	void set_instantiation_mode(int mode);
 	int get_shape() const;
 	int get_distribution() const;
 	int get_spawn_mode() const;
-	bool get_burst() const;
+	int get_instantiation_mode() const;
 
-	void set_alpha_threshold(float threshold);
-	void set_blend_mode(int mode);
-	void set_color_mode(int mode);
 	void set_layer(int layer);
 	void set_visible(bool visible);
-	float get_alpha_threshold() const;
-	int get_blend_mode() const;
-	int get_color_mode() const;
 	int get_layer() const;
 	bool is_visible() const;
 
 	void set_particle_rotation_mode(int mode);
+	void set_particle_pivot(Vector2 pivot);
 	int get_particle_rotation_mode() const;
+	Vector2 get_particle_pivot() const;
 
 	void set_particle_lifespan_variance(float variance);
 	void set_particle_initial_velocity_variance(float variance);
@@ -71,6 +67,7 @@ public:
 	float get_particle_size_variance() const;
 	float get_particle_opacity_variance() const;
 
+	Ref<PixelpartPath> get_shape_path() const;
 	Ref<PixelpartCurve> get_width() const;
 	Ref<PixelpartCurve> get_height() const;
 	Ref<PixelpartCurve> get_orientation() const;

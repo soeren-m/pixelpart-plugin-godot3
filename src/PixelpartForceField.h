@@ -22,6 +22,7 @@ public:
 	void init(Ref<PixelpartEffectResource> resource, pixelpart::ForceField* forceField, pixelpart::ParticleEngine* engine);
 
 	String get_name() const;
+	int get_id() const;
 
 	void set_lifetime_start(float time);
 	void set_lifetime_duration(float time);

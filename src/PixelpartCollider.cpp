@@ -8,6 +8,7 @@ void PixelpartCollider::_register_methods() {
 	register_property<PixelpartCollider, bool>("repeat", &PixelpartCollider::set_repeat, &PixelpartCollider::get_repeat, false);
 	register_method("_init", &PixelpartCollider::_init);
 	register_method("get_name", &PixelpartCollider::get_name);
+	register_method("get_id", &PixelpartCollider::get_id);
 	register_method("is_active", &PixelpartCollider::is_active);
 	register_method("get_local_time", &PixelpartCollider::get_local_time);
 	register_method("add_point", &PixelpartCollider::add_point);
@@ -39,23 +40,30 @@ String PixelpartCollider::get_name() const {
 
 	return String();
 }
+int PixelpartCollider::get_id() const {
+	if(nativeCollider) {
+		return static_cast<int>(nativeCollider->id);
+	}
+
+	return -1;
+}
 
 void PixelpartCollider::set_lifetime_start(float time) {
 	if(nativeCollider) {
 		nativeCollider->lifetimeStart = time;
-		nativeParticleEngine->onColliderUpdate();
+		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 void PixelpartCollider::set_lifetime_duration(float time) {
 	if(nativeCollider) {
 		nativeCollider->lifetimeDuration = time;
-		nativeParticleEngine->onColliderUpdate();
+		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 void PixelpartCollider::set_repeat(bool value) {
 	if(nativeCollider) {
 		nativeCollider->repeat = value;
-		nativeParticleEngine->onColliderUpdate();
+		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 float PixelpartCollider::get_lifetime_start() const {
@@ -96,14 +104,14 @@ float PixelpartCollider::get_local_time() const {
 void PixelpartCollider::add_point(Vector2 point) {
 	if(nativeCollider) {
 		nativeCollider->points.push_back(gd2pp(point / effectResource->get_scale()));
-		nativeParticleEngine->onColliderUpdate();
+		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 void PixelpartCollider::set_point(int index, Vector2 point) {
 	if(nativeCollider) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			nativeCollider->points[index] = gd2pp(point / effectResource->get_scale());
-			nativeParticleEngine->onColliderUpdate();
+			nativeParticleEngine->updateCollisionSolver();
 		}
 	}
 }
@@ -111,7 +119,7 @@ void PixelpartCollider::remove_point(int index) {
 	if(nativeCollider) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			nativeCollider->points.erase(nativeCollider->points.begin() + index);
-			nativeParticleEngine->onColliderUpdate();
+			nativeParticleEngine->updateCollisionSolver();
 		}
 	}
 }

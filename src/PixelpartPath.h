@@ -13,9 +13,9 @@ public:
 	enum class ObjectType {
 		none,
 		particle_emitter,
+		sprite,
 		force_field,
-		collider,
-		sprite
+		collider
 	};
 
 	static void _register_methods();

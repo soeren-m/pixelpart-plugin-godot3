@@ -3,9 +3,9 @@
 
 #include "PixelpartEffectResource.h"
 #include "PixelpartParticleEmitter.h"
+#include "PixelpartSprite.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
-#include "PixelpartSprite.h"
 #include "ParticleEngine.h"
 #include "RenderUtil.h"
 #include <Godot.hpp>
@@ -26,7 +26,8 @@ public:
 	void _exit_tree();
 
 	void _process(float dt);
-	void _update_draw();
+
+	void draw();
 
 	void play(bool p);
 	void pause();
@@ -58,38 +59,43 @@ public:
 	Ref<PixelpartEffectResource> get_effect() const;
 
 	Ref<PixelpartParticleEmitter> get_particle_emitter(String name) const;
+	Ref<PixelpartSprite> get_sprite(String name) const;
 	Ref<PixelpartForceField> get_force_field(String name) const;
 	Ref<PixelpartCollider> get_collider(String name) const;
-	Ref<PixelpartSprite> get_sprite(String name) const;
 	Ref<PixelpartParticleEmitter> get_particle_emitter_by_id(int id) const;
+	Ref<PixelpartSprite> get_sprite_by_id(int id) const;
+	Ref<PixelpartForceField> get_force_field_by_id(int id) const;
+	Ref<PixelpartCollider> get_collider_by_id(int id) const;
 	Ref<PixelpartParticleEmitter> get_particle_emitter_by_index(int index) const;
+	Ref<PixelpartSprite> get_sprite_by_index(int index) const;
 	Ref<PixelpartForceField> get_force_field_by_index(int index) const;
 	Ref<PixelpartCollider> get_collider_by_index(int index) const;
-	Ref<PixelpartSprite> get_sprite_by_index(int index) const;
 
 private:
 	struct EmitterInstance {
 		pixelpart::ParticleMeshBuilder meshBuilder;
 		RID canvasItem;
 		RID material;
-		std::string textureId;
+		RID shader;
+		std::vector<std::string> textures;
 	};
 	struct SpriteInstance {
 		RID canvasItem;
 		RID material;
-		std::string textureId;
+		RID shader;
+		std::vector<std::string> textures;
 	};
 
-	void draw_emitter2d(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID canvasItem, RID material, RID texture);
-	void draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID material, RID texture);
+	void draw_emitter2d(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID canvasItem, RID shader, RID material, const std::vector<RID>& textures);
+	void draw_sprite2d(const pixelpart::Sprite& sprite, RID canvasItem, RID shader, RID material, const std::vector<RID>& textures);
 
 	Ref<PixelpartEffectResource> effectResource;
 	pixelpart::Effect nativeEffect;
 
 	std::unordered_map<std::string, Ref<PixelpartParticleEmitter>> particleEmitters;
+	std::unordered_map<std::string, Ref<PixelpartSprite>> sprites;
 	std::unordered_map<std::string, Ref<PixelpartForceField>> forceFields;
 	std::unordered_map<std::string, Ref<PixelpartCollider>> colliders;
-	std::unordered_map<std::string, Ref<PixelpartSprite>> sprites;
 
 	pixelpart::ParticleEngine particleEngine;
 	float simulationTime = 0.0f;

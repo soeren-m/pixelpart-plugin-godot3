@@ -6,12 +6,13 @@ void PixelpartSprite::_register_methods() {
 	register_property<PixelpartSprite, float>("lifetime_start", &PixelpartSprite::set_lifetime_start, &PixelpartSprite::get_lifetime_start, 0.0f);
 	register_property<PixelpartSprite, float>("lifetime_duration", &PixelpartSprite::set_lifetime_duration, &PixelpartSprite::get_lifetime_duration, 0.0f);
 	register_property<PixelpartSprite, bool>("repeat", &PixelpartSprite::set_repeat, &PixelpartSprite::get_repeat, false);
-	register_property<PixelpartSprite, int>("blend_mode", &PixelpartSprite::set_blend_mode, &PixelpartSprite::get_blend_mode, 0);
-	register_property<PixelpartSprite, int>("color_mode", &PixelpartSprite::set_color_mode, &PixelpartSprite::get_color_mode, 0);
+	register_property<PixelpartSprite, bool>("align_with_path", &PixelpartSprite::set_align_with_path, &PixelpartSprite::get_align_with_path, false);
+	register_property<PixelpartSprite, Vector2>("pivot", &PixelpartSprite::set_pivot, &PixelpartSprite::get_pivot, Vector2(0.0f, 0.0f));
 	register_property<PixelpartSprite, int>("layer", &PixelpartSprite::set_layer, &PixelpartSprite::get_layer, 0);
 	register_property<PixelpartSprite, bool>("visible", &PixelpartSprite::set_visible, &PixelpartSprite::is_visible, true);
 	register_method("_init", &PixelpartSprite::_init);
 	register_method("get_name", &PixelpartSprite::get_name);
+	register_method("get_id", &PixelpartSprite::get_id);
 	register_method("is_active", &PixelpartSprite::is_active);
 	register_method("get_local_time", &PixelpartSprite::get_local_time);
 	register_method("get_width", &PixelpartSprite::get_width);
@@ -44,6 +45,13 @@ String PixelpartSprite::get_name() const {
 	}
 
 	return String();
+}
+int PixelpartSprite::get_id() const {
+	if(nativeSprite) {
+		return static_cast<int>(nativeSprite->id);
+	}
+
+	return -1;
 }
 
 void PixelpartSprite::set_lifetime_start(float time) {
@@ -96,16 +104,31 @@ float PixelpartSprite::get_local_time() const {
 		nativeParticleEngine->getTime() - nativeSprite->lifetimeStart, nativeSprite->lifetimeDuration) / nativeSprite->lifetimeDuration);
 }
 
-void PixelpartSprite::set_blend_mode(int mode) {
+void PixelpartSprite::set_align_with_path(bool mode) {
 	if(nativeSprite) {
-		nativeSprite->blendMode = static_cast<pixelpart::BlendMode>(mode);
+		nativeSprite->alignWithPath = mode;
 	}
 }
-void PixelpartSprite::set_color_mode(int mode) {
+void PixelpartSprite::set_pivot(Vector2 pivot) {
 	if(nativeSprite) {
-		nativeSprite->colorMode = static_cast<pixelpart::ColorMode>(mode);
+		nativeSprite->pivot = gd2pp(pivot);
 	}
 }
+bool PixelpartSprite::get_align_with_path() const {
+	if(nativeSprite) {
+		return nativeSprite->alignWithPath;
+	}
+
+	return false;
+}
+Vector2 PixelpartSprite::get_pivot() const {
+	if(nativeSprite) {
+		return pp2gd(nativeSprite->pivot);
+	}
+
+	return Vector2(0.0f, 0.0f);
+}
+
 void PixelpartSprite::set_layer(int layer) {
 	if(nativeSprite) {
 		nativeSprite->layer = static_cast<uint32_t>(std::max(layer, 0));
@@ -115,20 +138,6 @@ void PixelpartSprite::set_visible(bool visible) {
 	if(nativeSprite) {
 		nativeSprite->visible = visible;
 	}
-}
-int PixelpartSprite::get_blend_mode() const {
-	if(nativeSprite) {
-		return static_cast<int>(nativeSprite->blendMode);
-	}
-
-	return static_cast<int>(pixelpart::BlendMode::normal);
-}
-int PixelpartSprite::get_color_mode() const {
-	if(nativeSprite) {
-		return static_cast<int>(nativeSprite->colorMode);
-	}
-
-	return static_cast<int>(pixelpart::ColorMode::multiply);
 }
 int PixelpartSprite::get_layer() const {
 	if(nativeSprite) {

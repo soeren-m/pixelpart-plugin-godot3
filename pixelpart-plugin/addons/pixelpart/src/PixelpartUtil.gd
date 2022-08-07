@@ -1,5 +1,5 @@
 enum InterpolationType {
-	STEP = 0,
+	NONE = 0,
 	LINEAR = 1,
 	SPLINE = 2
 }
@@ -10,23 +10,12 @@ enum BlendModeType {
 	SUBTRACTIVE = 2
 }
 
-enum ColorModeType {
-	MULTIPLY = 0,
-	ADD = 1,
-	SUBTRACT = 2,
-	DIFFERENCE = 3,
-	SCREEN = 4,
-	OVERLAY = 5,
-	LIGHTEN = 6,
-	DARKEN = 7,
-	COLOR_ONLY = 8
-}
-
 enum EmitterShapeType {
 	POINT = 0,
 	LINE = 1,
 	ELLIPSE = 2,
-	RECTANGLE = 3
+	RECTANGLE = 3,
+	PATH = 4
 }
 
 enum EmitterDistributionType {
@@ -40,6 +29,12 @@ enum EmitterSpawnModeType {
 	FIXED = 0,
 	OUT = 1,
 	IN = 2
+}
+
+enum EmitterInstantiationModeType {
+	CONTINUOUS = 0,
+	BURST = 1,
+	BURST_DEATH = 2
 }
 
 enum RotationModeType {

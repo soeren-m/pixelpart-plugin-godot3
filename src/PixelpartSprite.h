@@ -24,6 +24,7 @@ public:
 	void init(Ref<PixelpartEffectResource> resource, pixelpart::Sprite* sprite, pixelpart::ParticleEngine* engine);
 
 	String get_name() const;
+	int get_id() const;
 
 	void set_lifetime_start(float time);
 	void set_lifetime_duration(float time);
@@ -34,12 +35,13 @@ public:
 	bool is_active() const;
 	float get_local_time() const;
 
-	void set_blend_mode(int mode);
-	void set_color_mode(int mode);
+	void set_align_with_path(bool mode);
+	void set_pivot(Vector2 pivot);
+	bool get_align_with_path() const;
+	Vector2 get_pivot() const;
+
 	void set_layer(int layer);
 	void set_visible(bool visible);
-	int get_blend_mode() const;
-	int get_color_mode() const;
 	int get_layer() const;
 	bool is_visible() const;
 

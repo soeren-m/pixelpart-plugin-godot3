@@ -32,7 +32,7 @@ void PixelpartEffectResource::import(String filepath) {
 		data = file->get_buffer(file->get_len());
 	}
 	else {
-		Godot::print_error(String("Failed to open file: ") + filepath, __FUNCTION__, "", __LINE__);
+		Godot::print_error(String("Failed to open file: ") + filepath, __FUNCTION__, "PixelpartEffectResource.cpp", __LINE__);
 	}
 
 	file->close();
@@ -44,10 +44,10 @@ void PixelpartEffectResource::load() {
 	}
 
 	try {
-		project = pixelpart::deserialize(std::string((char*)data.read().ptr(), data.size()), projectResources);
+		project = pixelpart::deserialize((const char*)data.read().ptr(), data.size(), projectResources);
 	}
 	catch(std::exception& e) {
-		Godot::print_error(String("Failed to parse effect: ") + get_path(), __FUNCTION__, "", __LINE__);
+		Godot::print_error(String("Failed to parse effect: ") + get_path(), __FUNCTION__, "PixelpartEffectResource.cpp", __LINE__);
 	}
 
 	loaded = true;

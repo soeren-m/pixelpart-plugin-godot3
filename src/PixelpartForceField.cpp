@@ -11,6 +11,7 @@ void PixelpartForceField::_register_methods() {
 	register_property<PixelpartForceField, float>("strength_variance", &PixelpartForceField::set_strength_variance, &PixelpartForceField::get_strength_variance, 0.0f);
 	register_method("_init", &PixelpartForceField::_init);
 	register_method("get_name", &PixelpartForceField::get_name);
+	register_method("get_id", &PixelpartForceField::get_id);
 	register_method("is_active", &PixelpartForceField::is_active);
 	register_method("get_local_time", &PixelpartForceField::get_local_time);
 	register_method("set_grid_size", &PixelpartForceField::set_grid_size);
@@ -44,23 +45,30 @@ String PixelpartForceField::get_name() const {
 
 	return String();
 }
+int PixelpartForceField::get_id() const {
+	if(nativeForceField) {
+		return static_cast<int>(nativeForceField->id);
+	}
+
+	return -1;
+}
 
 void PixelpartForceField::set_lifetime_start(float time) {
 	if(nativeForceField) {
 		nativeForceField->lifetimeStart = time;
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 void PixelpartForceField::set_lifetime_duration(float time) {
 	if(nativeForceField) {
 		nativeForceField->lifetimeDuration = time;
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 void PixelpartForceField::set_repeat(bool value) {
 	if(nativeForceField) {
 		nativeForceField->repeat = value;
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 float PixelpartForceField::get_lifetime_start() const {
@@ -101,7 +109,7 @@ float PixelpartForceField::get_local_time() const {
 void PixelpartForceField::set_type(int type) {
 	if(nativeForceField) {
 		nativeForceField->type = static_cast<pixelpart::ForceField::Type>(type);
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 int PixelpartForceField::get_type() const {
@@ -115,13 +123,13 @@ int PixelpartForceField::get_type() const {
 void PixelpartForceField::set_direction_variance(float variance) {
 	if(nativeForceField) {
 		nativeForceField->directionVariance = static_cast<pixelpart::floatd>(variance);
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 void PixelpartForceField::set_strength_variance(float variance) {
 	if(nativeForceField) {
 		nativeForceField->strengthVariance = static_cast<pixelpart::floatd>(variance);
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 float PixelpartForceField::get_direction_variance() const {
@@ -144,7 +152,7 @@ void PixelpartForceField::set_grid_size(int width, int height) {
 		nativeForceField->gridSize[0] = static_cast<uint32_t>(std::max(width, 1));
 		nativeForceField->gridSize[1] = static_cast<uint32_t>(std::max(height, 1));
 		nativeForceField->randomize(rng);
-		nativeParticleEngine->onForceFieldUpdate();
+		nativeParticleEngine->updateForceSolver();
 	}
 }
 int PixelpartForceField::get_grid_width() const {

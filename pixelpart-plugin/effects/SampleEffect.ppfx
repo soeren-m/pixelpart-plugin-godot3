@@ -1,20 +1,25 @@
 {
     "project": {
-        "version": 5,
+        "version": 6,
         "effect": {
             "emitters": [
                 {
-                    "name": "Emitter",
                     "id": 0,
                     "parent_id": null,
+                    "name": "Emitter",
                     "lifetime_start": 0.0,
                     "lifetime_duration": 1.0,
                     "repeat": true,
                     "shape": 0,
                     "distribution": 0,
                     "spawn_mode": 0,
+                    "instantiation_mode": 0,
+                    "shape_path": {
+                        "interpolation": "linear",
+                        "points": []
+                    },
                     "width": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -23,7 +28,7 @@
                         ]
                     },
                     "height": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -32,7 +37,7 @@
                         ]
                     },
                     "orientation": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -41,7 +46,7 @@
                         ]
                     },
                     "direction": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -50,7 +55,7 @@
                         ]
                     },
                     "spread": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -59,7 +64,7 @@
                         ]
                     },
                     "num_particles": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -67,9 +72,8 @@
                             ]
                         ]
                     },
-                    "burst": false,
                     "particle_lifespan": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -78,13 +82,8 @@
                         ]
                     },
                     "particle_lifespan_variance": 0.0,
-                    "particle_spawn_on_step_emitter": null,
-                    "particle_spawn_on_step_prob": 0.1,
-                    "particle_spawn_on_death_emitter": null,
-                    "particle_spawn_on_death_number": 1,
-                    "particle_spawn_on_death_prob": 1.0,
                     "motion_path": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.0,
@@ -96,13 +95,13 @@
                         ]
                     },
                     "particle_motion_path": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": []
                     },
                     "particle_motion_path_influence": 10.0,
                     "particle_position_relative": false,
                     "particle_initial_velocity": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -112,7 +111,7 @@
                     },
                     "particle_initial_velocity_variance": 0.0,
                     "particle_acceleration": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -121,7 +120,7 @@
                         ]
                     },
                     "particle_radial_acceleration": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -130,7 +129,7 @@
                         ]
                     },
                     "particle_damping": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -139,7 +138,7 @@
                         ]
                     },
                     "particle_initial_rotation": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -148,7 +147,7 @@
                         ]
                     },
                     "particle_rotation": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -158,8 +157,12 @@
                     },
                     "particle_rotation_mode": 0,
                     "particle_rotation_variance": 0.0,
+                    "particle_pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "particle_weight": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -168,7 +171,7 @@
                         ]
                     },
                     "particle_bounce": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -177,7 +180,7 @@
                         ]
                     },
                     "particle_friction": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -185,25 +188,105 @@
                             ]
                         ]
                     },
-                    "particle_sprite": {
-                        "id": "__default__",
-                        "texture_origin": 2,
-                        "texture_pivot": {
-                            "x": 0.0,
-                            "y": 0.0
-                        },
-                        "frames_row": 1,
-                        "frames_column": 1,
-                        "frame": 0,
-                        "random_frame": false
-                    },
-                    "particle_sprite_animation": {
-                        "frames": 1,
-                        "duration": 1.0,
-                        "loop": false
+                    "particle_shader": {
+                        "nodes": [
+                            [
+                                4,
+                                {
+                                    "type": "shader_node_blend",
+                                    "inputs": [
+                                        {
+                                            "id": 1,
+                                            "node": 3,
+                                            "slot": 0
+                                        },
+                                        {
+                                            "id": 2,
+                                            "node": 2,
+                                            "slot": 0
+                                        }
+                                    ],
+                                    "parameters": [
+                                        {
+                                            "type": "enum",
+                                            "value": 0
+                                        }
+                                    ],
+                                    "position": {
+                                        "x": 400.0,
+                                        "y": 200.0
+                                    }
+                                }
+                            ],
+                            [
+                                3,
+                                {
+                                    "type": "shader_node_texture_image",
+                                    "inputs": [
+                                        {
+                                            "id": 0,
+                                            "node": 1,
+                                            "slot": 0
+                                        }
+                                    ],
+                                    "parameters": [
+                                        {
+                                            "type": "resource_image",
+                                            "value": "__default__@sprites/basic_01.png"
+                                        }
+                                    ],
+                                    "position": {
+                                        "x": 250.0,
+                                        "y": 0.0
+                                    }
+                                }
+                            ],
+                            [
+                                2,
+                                {
+                                    "type": "shader_node_vertex_color",
+                                    "inputs": [],
+                                    "parameters": [],
+                                    "position": {
+                                        "x": 0.0,
+                                        "y": 200.0
+                                    }
+                                }
+                            ],
+                            [
+                                0,
+                                {
+                                    "type": "shader_node_output",
+                                    "inputs": [
+                                        {
+                                            "id": 3,
+                                            "node": 4,
+                                            "slot": 0
+                                        }
+                                    ],
+                                    "parameters": [],
+                                    "position": {
+                                        "x": 700.0,
+                                        "y": 0.0
+                                    }
+                                }
+                            ],
+                            [
+                                1,
+                                {
+                                    "type": "shader_node_vertex_texturecoord",
+                                    "inputs": [],
+                                    "parameters": [],
+                                    "position": {
+                                        "x": 0.0,
+                                        "y": 0.0
+                                    }
+                                }
+                            ]
+                        ]
                     },
                     "particle_initial_size": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -212,7 +295,7 @@
                         ]
                     },
                     "particle_size": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -221,7 +304,7 @@
                         ]
                     },
                     "particle_width": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -230,7 +313,7 @@
                         ]
                     },
                     "particle_height": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -240,7 +323,7 @@
                     },
                     "particle_size_variance": 0.0,
                     "particle_color": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -254,7 +337,7 @@
                         ]
                     },
                     "particle_initial_opacity": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -263,7 +346,7 @@
                         ]
                     },
                     "particle_opacity": {
-                        "interpolation": 1,
+                        "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
@@ -278,9 +361,7 @@
                         "w": 0.0
                     },
                     "particle_opacity_variance": 0.0,
-                    "alpha_threshold": 0.0,
                     "blend_mode": 0,
-                    "color_mode": 0,
                     "renderer": 0,
                     "renderer_trail_uv_factor": 1.0,
                     "renderer_trail_uv_rotation": 0,
@@ -289,11 +370,13 @@
                     "visible": true
                 }
             ],
+            "sprites": [],
             "force_fields": [],
-            "colliders": [],
-            "sprites": []
+            "colliders": []
         },
-        "postprocessing_effects": [],
+        "postprocessing_pipeline": {
+            "effects": []
+        },
         "background_color": {
             "x": 0.0,
             "y": 0.0,

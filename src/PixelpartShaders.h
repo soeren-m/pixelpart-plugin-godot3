@@ -1,9 +1,9 @@
 #ifndef PIXELPART_SHADERS_H
 #define PIXELPART_SHADERS_H
 
-#include "BlendMode.h"
 #include <Godot.hpp>
 #include <Node.hpp>
+#include <unordered_map>
 
 namespace godot {
 class PixelpartShaders : public Node {
@@ -19,17 +19,12 @@ public:
 
 	void _init();
 
-	RID get_shader_canvasitem(pixelpart::BlendMode blendMode) const;
-	RID get_shader_spatial(pixelpart::BlendMode blendMode) const;
+	RID get_shader(const std::string& shaderSource, const std::string& shaderType, const std::string& renderMode);
 
 private:
 	static PixelpartShaders* instance;
 
-	static const char* shaderSourceCanvasItem;
-	static const char* shaderSourceSpatial;
-
-	RID shaderCanvasItem[3];
-	RID shaderSpatial[3];
+	std::unordered_map<std::string, RID> shaders;
 };
 }
 

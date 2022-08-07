@@ -14,6 +14,8 @@ Color pp2gd(const pixelpart::vec4d& v);
 pixelpart::vec2d gd2pp(const Vector2& v);
 pixelpart::vec3d gd2pp(const Vector3& v);
 pixelpart::vec4d gd2pp(const Color& v);
+
+std::string replace(std::string str, const std::string& to, const std::string& from);
 }
 
 #endif
