@@ -4,6 +4,7 @@
 #include <Godot.hpp>
 #include <Node.hpp>
 #include <unordered_map>
+#include <string>
 
 namespace godot {
 class PixelpartShaders : public Node {
