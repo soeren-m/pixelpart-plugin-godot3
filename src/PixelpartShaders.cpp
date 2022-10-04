@@ -1,6 +1,7 @@
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
 #include "ShaderGraph.h"
+#include "PixelpartShaderGraph.h"
 #include <VisualServer.hpp>
 
 namespace godot {
@@ -17,8 +18,8 @@ PixelpartShaders::PixelpartShaders() {
 	instance = this;
 
 	nlohmann::ordered_json modelJson = nlohmann::json::parse(
-		#include "PixelpartShaderGraph.json"
-	);
+		PixelpartShaderGraph_json,
+		PixelpartShaderGraph_json + PixelpartShaderGraph_json_size);
 	pixelpart::ShaderGraph::graphType = modelJson;
 }
 PixelpartShaders::~PixelpartShaders() {
