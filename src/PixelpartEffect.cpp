@@ -655,7 +655,7 @@ void PixelpartEffect::draw_sprite(const pixelpart::Sprite& sprite, RID instance,
 		vs->immediate_uv(immediate, uvs[2]);
 		vs->immediate_uv2(immediate, Vector2(lives[2], 0.0f));
 		vs->immediate_color(immediate, colors[2]);
-		vs->immediate_vertex(immediate, Vector3(points[2].x, points[2].y, 0.0f));	
+		vs->immediate_vertex(immediate, Vector3(points[2].x, points[2].y, 0.0f));
 		vs->immediate_uv(immediate, uvs[3]);
 		vs->immediate_uv2(immediate, Vector2(lives[3], 0.0f));
 		vs->immediate_color(immediate, colors[3]);
@@ -693,7 +693,7 @@ Transform PixelpartEffect::get_final_transform() {
 		else if(billboardMode == SpatialMaterial::BILLBOARD_FIXED_Y) {
 			Transform cameraTransform = viewport->get_camera()->get_global_transform();
 			cameraTransform.origin.y = 0.0f;
-	
+
 			finalTransform.set_look_at(
 				finalTransform.get_origin(),
 				finalTransform.get_origin() * 2.0f - cameraTransform.origin,

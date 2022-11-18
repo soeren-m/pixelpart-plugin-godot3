@@ -48,7 +48,7 @@ void PixelpartParticleEmitter::_register_methods() {
 	register_method("get_particle_initial_size", &PixelpartParticleEmitter::get_particle_initial_size);
 	register_method("get_particle_size", &PixelpartParticleEmitter::get_particle_size);
 	register_method("get_particle_width", &PixelpartParticleEmitter::get_particle_width);
-	register_method("get_particle_height", &PixelpartParticleEmitter::get_particle_height);	
+	register_method("get_particle_height", &PixelpartParticleEmitter::get_particle_height);
 	register_method("get_particle_color", &PixelpartParticleEmitter::get_particle_color);
 	register_method("get_particle_initial_opacity", &PixelpartParticleEmitter::get_particle_initial_opacity);
 	register_method("get_particle_opacity", &PixelpartParticleEmitter::get_particle_opacity);

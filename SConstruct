@@ -223,7 +223,7 @@ elif env["platform"] == "windows":
     elif host_platform == "windows" and env["use_mingw"]:
         env = Environment(ENV=os.environ, tools=["mingw"])
         opts.Update(env)
-        
+
         env.Append(CXXFLAGS=["-std=c++17"])
         env["IMPLIBPREFIX"] = ""
         env["SHLIBPREFIX"] = ""
@@ -243,7 +243,7 @@ elif env["platform"] == "windows":
             env.Append(LINKFLAGS=["-m32"])
 
     target_path = "libpixelpart.win-" + env["bits"] + ".dll"
-    
+
 elif env["platform"] == "android":
     if host_platform == "windows":
         raise ValueError("Android build not supported by Windows host platform.")
@@ -295,7 +295,7 @@ elif env["platform"] == "android":
         },
     }
     arch_info = arch_info_table[env["android_arch"]]
-    
+
     env["CC"] = toolchain + "/bin/clang"
     env["CXX"] = toolchain + "/bin/clang++"
     env["AR"] = toolchain + "/bin/" + arch_info["tool_path"] + "-ar"
@@ -358,7 +358,7 @@ else:
     json_api_file = os.path.join(os.getcwd(), "godot-cpp", "godot-headers", "api.json")
 
 if env["generate_bindings"]:
-    import importlib 
+    import importlib
     bgen = importlib.import_module("godot-cpp.binding_generator")
     bgen.generate_bindings(json_api_file, True, "godot-cpp")
 
@@ -369,10 +369,10 @@ add_sources(sources, "pixelpart-runtime", ".cpp")
 add_sources(sources, "pixelpart-runtime/zlib", ".c")
 add_sources(sources, "src", ".cpp")
 
-env.Append(CPPPATH=[".", 
-    "godot-cpp/godot-headers/", 
-    "godot-cpp/include/", 
-    "godot-cpp/include/core/", 
+env.Append(CPPPATH=[".",
+    "godot-cpp/godot-headers/",
+    "godot-cpp/include/",
+    "godot-cpp/include/core/",
     "godot-cpp/include/gen/",
     "pixelpart-runtime/",
 ])

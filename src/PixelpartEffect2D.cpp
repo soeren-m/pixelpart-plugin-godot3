@@ -562,7 +562,7 @@ void PixelpartEffect2D::draw_emitter2d(const pixelpart::ParticleEmitter& emitter
 			textureCoords[i].y = static_cast<float>(idArray[i]) + textureCoords[i].y * 0.5f;
 		}
 
-		Color* colors = colorArray.write().ptr(); 
+		Color* colors = colorArray.write().ptr();
 		for(int i = 0; i < colorArray.size(); i++) {
 			colors[i].r = std::floor(velocityArray[i].x * 10000.0f + 10000.0f) + colors[i].r * 0.5f;
 			colors[i].g = std::floor(velocityArray[i].y * 10000.0f + 10000.0f) + colors[i].g * 0.5f;
@@ -630,7 +630,7 @@ void PixelpartEffect2D::draw_sprite2d(const pixelpart::Sprite& sprite, RID canva
 			textureCoords[i].y = textureCoords[i].y * 0.5;
 		}
 
-		Color* colors = colorArray.write().ptr(); 
+		Color* colors = colorArray.write().ptr();
 		for(std::size_t i = 0; i < colorArray.size(); i++) {
 			colors[i].r = 10000.0f + colors[i].r * 0.5f;
 			colors[i].g = 10000.0f + colors[i].g * 0.5f;

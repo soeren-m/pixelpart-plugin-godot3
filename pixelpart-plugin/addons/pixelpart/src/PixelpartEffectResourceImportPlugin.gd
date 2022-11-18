@@ -46,5 +46,5 @@ func import(source_file, save_path, options, r_platform_variants, r_gen_files):
 	var effect = preload("res://addons/pixelpart/src/PixelpartEffectResource.gdns").new()
 	effect.import(source_file)
 	effect.scale = options.scale
-	
+
 	return ResourceSaver.save("%s.%s" % [save_path, get_save_extension()], effect)
