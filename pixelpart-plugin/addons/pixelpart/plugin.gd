@@ -7,7 +7,7 @@ func _enter_tree():
 	var iconCanvasItem = load(plugin_path + "/icon16_canvasitem.png") as Texture
 	var iconSpatial = load(plugin_path + "/icon16_spatial.png") as Texture
 
-	add_project_setting("pixelpart/max_num_particles", 10000, TYPE_INT, PROPERTY_HINT_RANGE, "100,100000")
+	add_project_setting("pixelpart/particle_capacity", 10000, TYPE_INT, PROPERTY_HINT_RANGE, "100,100000")
 
 	add_autoload_singleton("PixelpartShaders", plugin_path + "/src/PixelpartShaders.gdns")
 	add_custom_type("PixelpartEffectResource", "Resource", load(plugin_path + "/src/PixelpartEffectResource.gdns"), iconCanvasItem)
@@ -25,7 +25,7 @@ func _exit_tree():
 	remove_custom_type("PixelpartEffectResource")
 	remove_autoload_singleton("PixelpartShaders")
 
-	remove_project_setting("pixelpart/max_num_particles")
+	remove_project_setting("pixelpart/particle_capacity")
 
 func add_project_setting(name: String, initial_value, type: int, hint: int, hint_string: String) -> void:
 	if ProjectSettings.has_setting(name):

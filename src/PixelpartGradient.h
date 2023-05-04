@@ -13,7 +13,7 @@ public:
 	enum class ObjectType {
 		none,
 		particle_emitter,
-		sprite,
+		particle_type,
 		force_field,
 		collider
 	};

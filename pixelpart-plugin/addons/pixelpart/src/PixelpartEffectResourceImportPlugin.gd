@@ -7,10 +7,10 @@ func get_visible_name():
 	return "Pixelpart Effect";
 
 func get_recognized_extensions():
-	return ["ppfx", "json"]
+	return ["ppfx"]
 
 func get_import_order():
-	return 5
+	return 1
 
 func get_save_extension():
 	return "res";
@@ -34,7 +34,7 @@ func get_import_options(preset):
 	match preset:
 		Presets.DEFAULT:
 			return [
-				{ "name": "scale", "default_value": 100.0 }
+				{ "name": "scale", "default_value": 10.0 }
 			]
 		_:
 			return []

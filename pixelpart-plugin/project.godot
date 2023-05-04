@@ -33,7 +33,7 @@ common/enable_pause_aware_picking=true
 
 [pixelpart]
 
-max_num_particles=10000
+particle_capacity=10000
 
 [rendering]
 

@@ -20,8 +20,8 @@ public:
 	void _init();
 	void init(Ref<PixelpartEffectResource> resource, pixelpart::Collider* collider, pixelpart::ParticleEngine* engine);
 
-	String get_name() const;
 	int get_id() const;
+	String get_name() const;
 
 	void set_lifetime_start(float time);
 	void set_lifetime_duration(float time);
@@ -32,10 +32,10 @@ public:
 	bool is_active() const;
 	float get_local_time() const;
 
-	void add_point(Vector2 point);
-	void set_point(int index, Vector2 point);
+	void add_point(Vector3 point);
+	void set_point(int index, Vector3 point);
 	void remove_point(int index);
-	Vector2 get_point(int index) const;
+	Vector3 get_point(int index) const;
 	int get_num_points() const;
 
 	Ref<PixelpartCurve> get_bounce() const;

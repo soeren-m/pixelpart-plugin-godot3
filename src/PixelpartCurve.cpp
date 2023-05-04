@@ -42,8 +42,8 @@ float PixelpartCurve::get(float t) const {
 	return 0.0f;
 }
 float PixelpartCurve::get_point(int index) const {
-	if(nativeCurve && index >= 0 && static_cast<std::size_t>(index) < nativeCurve->getNumPoints()) {
-		return static_cast<float>(nativeCurve->getPoints()[static_cast<std::size_t>(index)].value);
+	if(nativeCurve) {
+		return static_cast<float>(nativeCurve->getPoint(static_cast<std::size_t>(index)).value);
 	}
 
 	return 0.0f;

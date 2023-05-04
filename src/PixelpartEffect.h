@@ -3,11 +3,10 @@
 
 #include "PixelpartEffectResource.h"
 #include "PixelpartParticleEmitter.h"
-#include "PixelpartSprite.h"
+#include "PixelpartParticleType.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
 #include "ParticleEngine.h"
-#include "RenderUtil.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
 #include <SpatialMaterial.hpp>
@@ -51,60 +50,74 @@ public:
 
 	void set_flip_h(bool flip);
 	void set_flip_v(bool flip);
-	void set_billboard_mode(int mode);
 	bool get_flip_h() const;
 	bool get_flip_v() const;
-	int get_billboard_mode() const;
 
 	float get_import_scale() const;
 
 	void set_effect(Ref<PixelpartEffectResource> effectRes);
 	Ref<PixelpartEffectResource> get_effect() const;
 
-	Ref<PixelpartParticleEmitter> get_particle_emitter(String name) const;
-	Ref<PixelpartSprite> get_sprite(String name) const;
-	Ref<PixelpartForceField> get_force_field(String name) const;
-	Ref<PixelpartCollider> get_collider(String name) const;
-	Ref<PixelpartParticleEmitter> get_particle_emitter_by_id(int id) const;
-	Ref<PixelpartSprite> get_sprite_by_id(int id) const;
-	Ref<PixelpartForceField> get_force_field_by_id(int id) const;
-	Ref<PixelpartCollider> get_collider_by_id(int id) const;
-	Ref<PixelpartParticleEmitter> get_particle_emitter_by_index(int index) const;
-	Ref<PixelpartSprite> get_sprite_by_index(int index) const;
-	Ref<PixelpartForceField> get_force_field_by_index(int index) const;
-	Ref<PixelpartCollider> get_collider_by_index(int index) const;
+	Ref<PixelpartParticleEmitter> find_particle_emitter(String name) const;
+	Ref<PixelpartParticleType> find_particle_type(String name) const;
+	Ref<PixelpartForceField> find_force_field(String name) const;
+	Ref<PixelpartCollider> find_collider(String name) const;
+	Ref<PixelpartParticleEmitter> get_particle_emitter(int id) const;
+	Ref<PixelpartParticleType> get_particle_type(int id) const;
+	Ref<PixelpartForceField> get_force_field(int id) const;
+	Ref<PixelpartCollider> get_collider(int id) const;
+	Ref<PixelpartParticleEmitter> get_particle_emitter_at_index(int index) const;
+	Ref<PixelpartParticleType> get_particle_type_at_index(int index) const;
+	Ref<PixelpartForceField> get_force_field_at_index(int index) const;
+	Ref<PixelpartCollider> get_collider_at_index(int index) const;
 
 private:
-	struct EmitterInstance {
-		pixelpart::ParticleMeshBuilder meshBuilder;
+	struct ParticleMeshInstance {
+		struct ParticleTrail {
+			uint32_t numParticles = 0;
+			pixelpart::floatd length = 0.0;
+
+			std::vector<pixelpart::vec3d> position;
+			std::vector<pixelpart::vec3d> size;
+			std::vector<pixelpart::vec4d> color;
+			std::vector<pixelpart::vec3d> velocity;
+			std::vector<pixelpart::vec3d> force;
+			std::vector<pixelpart::vec3d> direction;
+			std::vector<pixelpart::floatd> index;
+			std::vector<pixelpart::floatd> life;
+		};
+
 		RID immediate;
 		RID instance;
 		RID material;
 		RID shader;
+
 		std::vector<std::string> textures;
-	};
-	struct SpriteInstance {
-		RID immediate;
-		RID instance;
-		RID material;
-		RID shader;
-		std::vector<std::string> textures;
+
+		pixelpart::ParticleData sortedParticleData;
+		std::vector<uint32_t> sortKeys;
+
+		std::unordered_map<uint32_t, ParticleTrail> trails;
 	};
 
-	void draw_emitter(const pixelpart::ParticleEmitter& emitter, pixelpart::ParticleMeshBuilder& meshBuilder, RID instance, RID immediate, RID shader, RID material, const std::vector<RID>& textures);
-	void draw_sprite(const pixelpart::Sprite& sprite, RID instance, RID immediate, RID shader, RID material, const std::vector<RID>& textures);
+	void draw_particles(const pixelpart::ParticleType& particleType, ParticleMeshInstance& meshInstance);
 
-	Transform get_final_transform();
+	void add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
+	void add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
+	void add_particle_trails(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
+
+	pixelpart::mat3d rotation3d(const pixelpart::vec3d& angle);
+	pixelpart::mat3d lookAt(const pixelpart::vec3d& direction);
 
 	Ref<PixelpartEffectResource> effectResource;
 	pixelpart::Effect nativeEffect;
 
 	std::unordered_map<std::string, Ref<PixelpartParticleEmitter>> particleEmitters;
-	std::unordered_map<std::string, Ref<PixelpartSprite>> sprites;
+	std::unordered_map<std::string, Ref<PixelpartParticleType>> particleTypes;
 	std::unordered_map<std::string, Ref<PixelpartForceField>> forceFields;
 	std::unordered_map<std::string, Ref<PixelpartCollider>> colliders;
 
-	pixelpart::ParticleEngine particleEngine;
+	std::unique_ptr<pixelpart::ParticleEngine> particleEngine;
 	float simulationTime = 0.0f;
 
 	bool playing = true;
@@ -115,10 +128,8 @@ private:
 
 	bool flipH = false;
 	bool flipV = false;
-	int billboardMode = SpatialMaterial::BILLBOARD_DISABLED;
 
-	std::vector<EmitterInstance> emitterInstances;
-	std::vector<SpriteInstance> spriteInstances;
+	std::vector<ParticleMeshInstance> particleMeshInstances;
 	std::unordered_map<std::string, RID> textures;
 };
 }

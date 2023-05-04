@@ -37,14 +37,14 @@ void PixelpartGradient::init(pixelpart::Curve<pixelpart::vec4d>* gradient, pixel
 
 Color PixelpartGradient::get(float t) const {
 	if(nativeGradient) {
-		return pp2gd(nativeGradient->get(t));
+		return toGd(nativeGradient->get(t));
 	}
 
 	return Color(0.0f, 0.0f, 0.0f, 0.0f);
 }
 Color PixelpartGradient::get_point(int index) const {
-	if(nativeGradient && index >= 0 && static_cast<std::size_t>(index) < nativeGradient->getNumPoints()) {
-		return pp2gd(nativeGradient->getPoints()[static_cast<std::size_t>(index)].value);
+	if(nativeGradient) {
+		return toGd(nativeGradient->getPoint(static_cast<std::size_t>(index)).value);
 	}
 
 	return Color(0.0f, 0.0f, 0.0f, 0.0f);
@@ -53,25 +53,25 @@ Color PixelpartGradient::get_point(int index) const {
 void PixelpartGradient::set(Color value) {
 	if(nativeGradient) {
 		nativeGradient->clear();
-		nativeGradient->setPoints({ pixelpart::Curve<pixelpart::vec4d>::Point{ 0.5, gd2pp(value) } });
+		nativeGradient->setPoints({ pixelpart::Curve<pixelpart::vec4d>::Point{ 0.5, fromGd(value) } });
 		update_simulation();
 	}
 }
 void PixelpartGradient::add_point(float t, Color value) {
 	if(nativeGradient) {
-		nativeGradient->addPoint(t, gd2pp(value));
+		nativeGradient->addPoint(t, fromGd(value));
 		update_simulation();
 	}
 }
 void PixelpartGradient::set_point(int index, Color value) {
 	if(nativeGradient) {
-		nativeGradient->setPoint(static_cast<std::size_t>(index), gd2pp(value));
+		nativeGradient->setPoint(static_cast<std::size_t>(index), fromGd(value));
 		update_simulation();
 	}
 }
 void PixelpartGradient::move_point(int index, Color delta) {
 	if(nativeGradient) {
-		nativeGradient->movePoint(static_cast<std::size_t>(index), gd2pp(delta));
+		nativeGradient->movePoint(static_cast<std::size_t>(index), fromGd(delta));
 		update_simulation();
 	}
 }
@@ -103,7 +103,7 @@ int PixelpartGradient::get_num_points() const {
 
 void PixelpartGradient::move(Color delta) {
 	if(nativeGradient) {
-		nativeGradient->move(gd2pp(delta));
+		nativeGradient->move(fromGd(delta));
 		update_simulation();
 	}
 }

@@ -7,15 +7,13 @@
 #include <Color.hpp>
 
 namespace godot {
-Vector2 pp2gd(const pixelpart::vec2d& v);
-Vector3 pp2gd(const pixelpart::vec3d& v);
-Color pp2gd(const pixelpart::vec4d& v);
+Vector2 toGd(const pixelpart::vec2d& v);
+Vector3 toGd(const pixelpart::vec3d& v);
+Color toGd(const pixelpart::vec4d& v);
 
-pixelpart::vec2d gd2pp(const Vector2& v);
-pixelpart::vec3d gd2pp(const Vector3& v);
-pixelpart::vec4d gd2pp(const Color& v);
-
-std::string replace(std::string str, const std::string& to, const std::string& from);
+pixelpart::vec2d fromGd(const Vector2& v);
+pixelpart::vec3d fromGd(const Vector3& v);
+pixelpart::vec4d fromGd(const Color& v);
 }
 
 #endif

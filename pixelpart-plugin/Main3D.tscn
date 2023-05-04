@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://addons/pixelpart/src/PixelpartEffect.gdns" type="Script" id=1]
-[ext_resource path="res://effects/SampleEffect.ppfx" type="Resource" id=2]
+[ext_resource path="res://effects/SampleEffect3D.ppfx" type="Resource" id=2]
 [ext_resource path="res://Main3D.gd" type="Script" id=3]
 [ext_resource path="res://TestNode3D.gd" type="Script" id=4]
 
@@ -16,4 +16,4 @@ script = ExtResource( 1 )
 effect = ExtResource( 2 )
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( -0.83616, -0.385754, 0.389911, 0.114681, 0.572214, 0.812046, -0.536363, 0.723716, -0.434224, 11.4062, 25.6872, -19.5499 )
+transform = Transform( -0.551843, -0.521097, 0.651097, -0.0916545, 0.813908, 0.573719, -0.828896, 0.256927, -0.49691, 14.1027, 17.0352, -13.4131 )

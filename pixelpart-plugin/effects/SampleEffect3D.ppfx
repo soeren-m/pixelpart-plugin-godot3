@@ -1,8 +1,8 @@
 {
     "project": {
-        "version": 6,
+        "version": 7,
         "effect": {
-            "emitters": [
+            "particle_emitters": [
                 {
                     "id": 0,
                     "parent_id": null,
@@ -10,29 +10,34 @@
                     "lifetime_start": 0.0,
                     "lifetime_duration": 1.0,
                     "repeat": true,
-                    "shape": 0,
-                    "distribution": 0,
-                    "spawn_mode": 0,
-                    "instantiation_mode": 0,
-                    "shape_path": {
-                        "interpolation": "linear",
-                        "points": []
-                    },
-                    "width": {
+                    "position": {
                         "interpolation": "linear",
                         "points": [
                             [
-                                0.5,
-                                0.1
+                                0.0,
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                }
                             ]
                         ]
                     },
-                    "height": {
+                    "shape": "point",
+                    "path": {
+                        "interpolation": "linear",
+                        "points": []
+                    },
+                    "size": {
                         "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
-                                0.1
+                                {
+                                    "x": 0.1,
+                                    "y": 0.1,
+                                    "z": 0.1
+                                }
                             ]
                         ]
                     },
@@ -41,16 +46,27 @@
                         "points": [
                             [
                                 0.5,
-                                0.0
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                }
                             ]
                         ]
                     },
+                    "distribution": "uniform",
+                    "emission_mode": "continuous",
+                    "direction_mode": "fixed",
                     "direction": {
                         "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
-                                0.0
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                }
                             ]
                         ]
                     },
@@ -60,6 +76,29 @@
                             [
                                 0.5,
                                 20.0
+                            ]
+                        ]
+                    }
+                }
+            ],
+            "particle_types": [
+                {
+                    "id": 0,
+                    "parent_id": 0,
+                    "name": "Particle",
+                    "lifetime_start": 0.0,
+                    "lifetime_duration": 1.0,
+                    "repeat": true,
+                    "position": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.0,
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                }
                             ]
                         ]
                     },
@@ -72,7 +111,7 @@
                             ]
                         ]
                     },
-                    "particle_lifespan": {
+                    "lifespan": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -81,87 +120,90 @@
                             ]
                         ]
                     },
-                    "particle_lifespan_variance": 0.0,
-                    "motion_path": {
+                    "lifespan_variance": 0.0,
+                    "position_relative": false,
+                    "motion_path_force": 0.0,
+                    "initial_velocity": {
                         "interpolation": "linear",
                         "points": [
                             [
-                                0.0,
+                                0.5,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "velocity_variance": 0.0,
+                    "acceleration": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
+                                0.0
+                            ]
+                        ]
+                    },
+                    "radial_acceleration": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
+                                0.0
+                            ]
+                        ]
+                    },
+                    "damping": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "rotation_mode": "angle",
+                    "alignment_mode": "camera",
+                    "initial_rotation": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
                                 {
                                     "x": 0.0,
-                                    "y": 0.0
+                                    "y": 0.0,
+                                    "z": 0.0
                                 }
                             ]
                         ]
                     },
-                    "particle_motion_path": {
-                        "interpolation": "linear",
-                        "points": []
-                    },
-                    "particle_motion_path_influence": 10.0,
-                    "particle_position_relative": false,
-                    "particle_initial_velocity": {
+                    "rotation": {
                         "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
-                                1.0
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                }
                             ]
                         ]
                     },
-                    "particle_initial_velocity_variance": 0.0,
-                    "particle_acceleration": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                0.0
-                            ]
-                        ]
-                    },
-                    "particle_radial_acceleration": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                0.0
-                            ]
-                        ]
-                    },
-                    "particle_damping": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                1.0
-                            ]
-                        ]
-                    },
-                    "particle_initial_rotation": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                0.0
-                            ]
-                        ]
-                    },
-                    "particle_rotation": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                0.0
-                            ]
-                        ]
-                    },
-                    "particle_rotation_mode": 0,
-                    "particle_rotation_variance": 0.0,
-                    "particle_pivot": {
+                    "rotation_variance": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": 0.0,
+                        "z": 0.0
                     },
-                    "particle_weight": {
+                    "angular_velocity_variance": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "weight": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -170,7 +212,7 @@
                             ]
                         ]
                     },
-                    "particle_bounce": {
+                    "bounce": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -179,7 +221,7 @@
                             ]
                         ]
                     },
-                    "particle_friction": {
+                    "friction": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -188,12 +230,16 @@
                             ]
                         ]
                     },
-                    "particle_shader": {
+                    "visible": true,
+                    "layer": 1,
+                    "blend_mode": "normal",
+                    "shader": {
                         "nodes": [
                             [
                                 4,
                                 {
                                     "type": "shader_node_blend",
+                                    "name": "",
                                     "inputs": [
                                         {
                                             "id": 1,
@@ -222,6 +268,7 @@
                                 3,
                                 {
                                     "type": "shader_node_texture_image",
+                                    "name": "",
                                     "inputs": [
                                         {
                                             "id": 0,
@@ -245,6 +292,7 @@
                                 2,
                                 {
                                     "type": "shader_node_vertex_color",
+                                    "name": "",
                                     "inputs": [],
                                     "parameters": [],
                                     "position": {
@@ -257,6 +305,7 @@
                                 0,
                                 {
                                     "type": "shader_node_output",
+                                    "name": "",
                                     "inputs": [
                                         {
                                             "id": 3,
@@ -275,6 +324,7 @@
                                 1,
                                 {
                                     "type": "shader_node_vertex_texturecoord",
+                                    "name": "",
                                     "inputs": [],
                                     "parameters": [],
                                     "position": {
@@ -285,16 +335,7 @@
                             ]
                         ]
                     },
-                    "particle_initial_size": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                1.0
-                            ]
-                        ]
-                    },
-                    "particle_size": {
+                    "initial_size": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -303,26 +344,21 @@
                             ]
                         ]
                     },
-                    "particle_width": {
+                    "size": {
                         "interpolation": "linear",
                         "points": [
                             [
                                 0.5,
-                                1.0
+                                {
+                                    "x": 1.0,
+                                    "y": 1.0,
+                                    "z": 1.0
+                                }
                             ]
                         ]
                     },
-                    "particle_height": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                1.0
-                            ]
-                        ]
-                    },
-                    "particle_size_variance": 0.0,
-                    "particle_color": {
+                    "size_variance": 0.0,
+                    "color": {
                         "interpolation": "linear",
                         "points": [
                             [
@@ -336,43 +372,46 @@
                             ]
                         ]
                     },
-                    "particle_initial_opacity": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                1.0
-                            ]
-                        ]
-                    },
-                    "particle_opacity": {
-                        "interpolation": "linear",
-                        "points": [
-                            [
-                                0.5,
-                                1.0
-                            ]
-                        ]
-                    },
-                    "particle_color_variance": {
+                    "color_variance": {
                         "x": 0.0,
                         "y": 0.0,
                         "z": 0.0,
                         "w": 0.0
                     },
-                    "particle_opacity_variance": 0.0,
-                    "blend_mode": 0,
-                    "renderer": 0,
-                    "renderer_trail_uv_factor": 1.0,
-                    "renderer_trail_uv_rotation": 0,
-                    "renderer_num_trail_segments": 0,
-                    "layer": 1,
-                    "visible": true
+                    "initial_opacity": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "opacity": {
+                        "interpolation": "linear",
+                        "points": [
+                            [
+                                0.5,
+                                1.0
+                            ]
+                        ]
+                    },
+                    "opacity_variance": 0.0,
+                    "renderer": "sprite",
+                    "sprite_renderer_settings": {
+                        "sort_criterion": "none",
+                        "sort_passes": 100
+                    },
+                    "trail_renderer_settings": {
+                        "texture_uv_factor": 1.0,
+                        "texture_rotation": 0,
+                        "num_trail_segments": 0
+                    }
                 }
             ],
-            "sprites": [],
             "force_fields": [],
-            "colliders": []
+            "colliders": [],
+            "3d": true
         },
         "postprocessing_pipeline": {
             "effects": []
@@ -385,12 +424,17 @@
         },
         "camera_position": {
             "x": 0.0,
-            "y": 0.0
+            "y": 1.0,
+            "z": 2.0
         },
         "camera_zoom": 1.0,
+        "camera_fov": 60.0,
+        "camera_pitch": -20.0,
+        "camera_yaw": 0.0,
+        "camera_roll": 0.0,
         "render_settings": {
-            "frame_width": 512,
-            "frame_height": 512,
+            "frame_width": 1024,
+            "frame_height": 1024,
             "capture_rate": 30.0,
             "duration": 1.0,
             "delay": 0.0,
@@ -402,8 +446,8 @@
             "simulation_seed": 0
         },
         "preview_settings": {
-            "frame_width": 512,
-            "frame_height": 512,
+            "frame_width": 1024,
+            "frame_height": 1024,
             "capture_rate": 30.0,
             "duration": 10.0,
             "delay": 0.0,

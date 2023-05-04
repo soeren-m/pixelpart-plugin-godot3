@@ -7,8 +7,8 @@ void PixelpartCollider::_register_methods() {
 	register_property<PixelpartCollider, float>("lifetime_duration", &PixelpartCollider::set_lifetime_duration, &PixelpartCollider::get_lifetime_duration, 0.0f);
 	register_property<PixelpartCollider, bool>("repeat", &PixelpartCollider::set_repeat, &PixelpartCollider::get_repeat, false);
 	register_method("_init", &PixelpartCollider::_init);
-	register_method("get_name", &PixelpartCollider::get_name);
 	register_method("get_id", &PixelpartCollider::get_id);
+	register_method("get_name", &PixelpartCollider::get_name);
 	register_method("is_active", &PixelpartCollider::is_active);
 	register_method("get_local_time", &PixelpartCollider::get_local_time);
 	register_method("add_point", &PixelpartCollider::add_point);
@@ -33,13 +33,6 @@ void PixelpartCollider::init(Ref<PixelpartEffectResource> resource, pixelpart::C
 	nativeParticleEngine = engine;
 }
 
-String PixelpartCollider::get_name() const {
-	if(nativeCollider) {
-		return String(nativeCollider->name.c_str());
-	}
-
-	return String();
-}
 int PixelpartCollider::get_id() const {
 	if(nativeCollider) {
 		return static_cast<int>(nativeCollider->id);
@@ -47,27 +40,34 @@ int PixelpartCollider::get_id() const {
 
 	return -1;
 }
+String PixelpartCollider::get_name() const {
+	if(nativeCollider) {
+		return String(nativeCollider->name.c_str());
+	}
+
+	return String();
+}
 
 void PixelpartCollider::set_lifetime_start(float time) {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		nativeCollider->lifetimeStart = time;
 		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 void PixelpartCollider::set_lifetime_duration(float time) {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		nativeCollider->lifetimeDuration = time;
 		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 void PixelpartCollider::set_repeat(bool value) {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		nativeCollider->repeat = value;
 		nativeParticleEngine->updateCollisionSolver();
 	}
 }
 float PixelpartCollider::get_lifetime_start() const {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		return static_cast<float>(nativeCollider->lifetimeStart);
 	}
 
@@ -88,7 +88,7 @@ bool PixelpartCollider::get_repeat() const {
 	return false;
 }
 bool PixelpartCollider::is_active() const {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		return
 			nativeParticleEngine->getTime() >= nativeCollider->lifetimeStart &&
 			(nativeParticleEngine->getTime() <= nativeCollider->lifetimeStart + nativeCollider->lifetimeDuration || nativeCollider->repeat);
@@ -97,40 +97,44 @@ bool PixelpartCollider::is_active() const {
 	return false;
 }
 float PixelpartCollider::get_local_time() const {
-	return static_cast<float>(std::fmod(
-		nativeParticleEngine->getTime() - nativeCollider->lifetimeStart, nativeCollider->lifetimeDuration) / nativeCollider->lifetimeDuration);
+	if(nativeCollider && nativeParticleEngine) {
+		return static_cast<float>(std::fmod(
+			nativeParticleEngine->getTime() - nativeCollider->lifetimeStart, nativeCollider->lifetimeDuration) / nativeCollider->lifetimeDuration);
+	}
+
+	return 0.0f;
 }
 
-void PixelpartCollider::add_point(Vector2 point) {
-	if(nativeCollider) {
-		nativeCollider->points.push_back(gd2pp(point / effectResource->get_scale()));
+void PixelpartCollider::add_point(Vector3 point) {
+	if(nativeCollider && nativeParticleEngine) {
+		nativeCollider->points.push_back(fromGd(point / effectResource->get_scale()));
 		nativeParticleEngine->updateCollisionSolver();
 	}
 }
-void PixelpartCollider::set_point(int index, Vector2 point) {
-	if(nativeCollider) {
+void PixelpartCollider::set_point(int index, Vector3 point) {
+	if(nativeCollider && nativeParticleEngine) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
-			nativeCollider->points[index] = gd2pp(point / effectResource->get_scale());
+			nativeCollider->points[index] = fromGd(point / effectResource->get_scale());
 			nativeParticleEngine->updateCollisionSolver();
 		}
 	}
 }
 void PixelpartCollider::remove_point(int index) {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
 			nativeCollider->points.erase(nativeCollider->points.begin() + index);
 			nativeParticleEngine->updateCollisionSolver();
 		}
 	}
 }
-Vector2 PixelpartCollider::get_point(int index) const {
-	if(nativeCollider) {
+Vector3 PixelpartCollider::get_point(int index) const {
+	if(nativeCollider && nativeParticleEngine) {
 		if(index >= 0 && index < static_cast<int>(nativeCollider->points.size())) {
-			return pp2gd(nativeCollider->points[index]) * effectResource->get_scale();
+			return toGd(nativeCollider->points[index]) * effectResource->get_scale();
 		}
 	}
 
-	return Vector2(0.0f, 0.0f);
+	return Vector3(0.0f, 0.0f, 0.0f);
 }
 int PixelpartCollider::get_num_points() const {
 	if(nativeCollider) {
@@ -141,7 +145,7 @@ int PixelpartCollider::get_num_points() const {
 }
 
 Ref<PixelpartCurve> PixelpartCollider::get_bounce() const {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
 		curve->init(&nativeCollider->bounce, nativeParticleEngine, PixelpartCurve::ObjectType::collider);
@@ -152,7 +156,7 @@ Ref<PixelpartCurve> PixelpartCollider::get_bounce() const {
 	return Ref<PixelpartCurve>();
 }
 Ref<PixelpartCurve> PixelpartCollider::get_friction() const {
-	if(nativeCollider) {
+	if(nativeCollider && nativeParticleEngine) {
 		Ref<PixelpartCurve> curve;
 		curve.instance();
 		curve->init(&nativeCollider->friction, nativeParticleEngine, PixelpartCurve::ObjectType::collider);

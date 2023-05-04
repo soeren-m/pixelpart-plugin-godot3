@@ -1,0 +1,14 @@
+[remap]
+
+importer="pixelpart.effect"
+type="Resource"
+path="res://.import/SampleEffect3D.ppfx-0f7d31e09d128879f0ca1817c95dcc1a.res"
+
+[deps]
+
+source_file="res://effects/SampleEffect3D.ppfx"
+dest_files=[ "res://.import/SampleEffect3D.ppfx-0f7d31e09d128879f0ca1817c95dcc1a.res" ]
+
+[params]
+
+scale=10.0

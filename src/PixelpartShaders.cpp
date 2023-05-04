@@ -42,14 +42,39 @@ RID PixelpartShaders::get_shader(const std::string& shaderSource, const std::str
 		";\n" + shaderSource;
 
 	if(shaderType == "canvas_item") {
-		finalShaderSource = replace(finalShaderSource, "", "{SHADER_MAIN_START}");
-		finalShaderSource = replace(finalShaderSource, "COLOR = __SHADER_COLOR__;", "{SHADER_MAIN_END}");
-		finalShaderSource = replace(finalShaderSource, "VELOCITY = (floor(COLOR.rg) - vec2(10000.0)) / vec2(10000.0);\nFORCE = (floor(COLOR.ba) - vec2(10000.0)) / vec2(10000.0);\nLIFE = floor(UV.x) / 10000.0;\nOBJECT_ID = floor(UV.y);\nUV = fract(UV) * vec2(2.0);\nCOLOR = fract(COLOR) * vec4(2.0);", "{SHADER_VERTEX_MAIN}");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_MAIN_START}", "");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_MAIN_END}",
+			R"!(COLOR = __SHADER_COLOR__;)!");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_VERTEX_MAIN}",
+			R"!(
+				const float __PACK_FACTOR__ = 10000.0;
+				VELOCITY = vec3((floor(COLOR.rg) - vec2(__PACK_FACTOR__)) / vec2(__PACK_FACTOR__), 0.0);
+				FORCE = vec3((floor(COLOR.ba) - vec2(__PACK_FACTOR__)) / vec2(__PACK_FACTOR__), 0.0);
+				LIFE = floor(UV.x) / __PACK_FACTOR__;
+				OBJECT_ID = floor(UV.y) - 1.0;
+				UV = fract(UV) * vec2(10.0);
+				COLOR = fract(COLOR) * vec4(10.0);
+			)!");
 	}
 	else if(shaderType == "spatial") {
-		finalShaderSource = replace(finalShaderSource, "", "{SHADER_MAIN_START}");
-		finalShaderSource = replace(finalShaderSource, "if(!OUTPUT_IS_SRGB) { __SHADER_COLOR__.rgb = mix(pow((__SHADER_COLOR__.rgb + vec3(0.055)) * (1.0 / (1.0 + 0.055)), vec3(2.4)), __SHADER_COLOR__.rgb * (1.0 / 12.92), lessThan(__SHADER_COLOR__.rgb, vec3(0.04045))); }\nALBEDO = __SHADER_COLOR__.rgb;\n\nALPHA = __SHADER_COLOR__.a;", "{SHADER_MAIN_END}");
-		finalShaderSource = replace(finalShaderSource, "VELOCITY = NORMAL.xy;\nFORCE = TANGENT.xy;\nLIFE = UV2.x;\nOBJECT_ID = UV2.y;", "{SHADER_VERTEX_MAIN}");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_MAIN_START}", "");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_MAIN_END}",
+			R"!(
+				if(!OUTPUT_IS_SRGB) {
+					__SHADER_COLOR__.rgb = mix(pow((__SHADER_COLOR__.rgb + vec3(0.055)) * (1.0 / (1.0 + 0.055)), vec3(2.4)), __SHADER_COLOR__.rgb * (1.0 / 12.92), lessThan(__SHADER_COLOR__.rgb, vec3(0.04045)));
+				}
+				ALBEDO = __SHADER_COLOR__.rgb;
+				ALPHA = __SHADER_COLOR__.a;
+			)!");
+		finalShaderSource = replace(finalShaderSource, "{SHADER_VERTEX_MAIN}",
+			R"!(
+				const float __PACK_FACTOR__ = 10000.0;
+				VELOCITY = TANGENT.xyz;
+				FORCE = (floor(COLOR.rgb) - vec3(__PACK_FACTOR__)) / vec3(__PACK_FACTOR__);
+				LIFE = UV2.x;
+				OBJECT_ID = UV2.y;
+				COLOR = fract(COLOR) * vec4(10.0);
+			)!");
 	}
 	else {
 		return RID();
@@ -66,5 +91,19 @@ RID PixelpartShaders::get_shader(const std::string& shaderSource, const std::str
 	shaders[finalShaderSource] = shader;
 
 	return shader;
+}
+
+std::string PixelpartShaders::replace(std::string str, const std::string& from, const std::string& to) {
+	if(from.empty()) {
+		return str;
+	}
+
+	std::size_t pos = 0;
+	while((pos = str.find(from, pos)) != std::string::npos) {
+		str.replace(pos, from.length(), to);
+		pos += to.length();
+	}
+
+	return str;
 }
 }

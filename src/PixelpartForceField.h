@@ -3,7 +3,7 @@
 
 #include "PixelpartEffectResource.h"
 #include "PixelpartCurve.h"
-#include "PixelpartPath.h"
+#include "PixelpartCurve3.h"
 #include "ForceField.h"
 #include "ParticleEngine.h"
 #include <Godot.hpp>
@@ -21,8 +21,8 @@ public:
 	void _init();
 	void init(Ref<PixelpartEffectResource> resource, pixelpart::ForceField* forceField, pixelpart::ParticleEngine* engine);
 
-	String get_name() const;
 	int get_id() const;
+	String get_name() const;
 
 	void set_lifetime_start(float time);
 	void set_lifetime_duration(float time);
@@ -33,24 +33,25 @@ public:
 	bool is_active() const;
 	float get_local_time() const;
 
+	Ref<PixelpartCurve3> get_position() const;
+
 	void set_type(int type);
 	int get_type() const;
+
+	Ref<PixelpartCurve3> get_size() const;
+	Ref<PixelpartCurve3> get_orientation() const;
+	Ref<PixelpartCurve3> get_direction() const;
+	Ref<PixelpartCurve> get_strength() const;
 
 	void set_direction_variance(float variance);
 	void set_strength_variance(float variance);
 	float get_direction_variance() const;
 	float get_strength_variance() const;
 
-	void set_grid_size(int width, int height);
+	void set_grid_size(int width, int height, int depth);
 	int get_grid_width() const;
 	int get_grid_height() const;
-
-	Ref<PixelpartCurve> get_width() const;
-	Ref<PixelpartCurve> get_height() const;
-	Ref<PixelpartCurve> get_orientation() const;
-	Ref<PixelpartPath> get_motion_path() const;
-	Ref<PixelpartCurve> get_direction() const;
-	Ref<PixelpartCurve> get_strength() const;
+	int get_grid_depth() const;
 
 private:
 	Ref<PixelpartEffectResource> effectResource;

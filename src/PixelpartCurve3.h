@@ -1,43 +1,43 @@
-#ifndef PIXELPART_PATH_H
-#define PIXELPART_PATH_H
+#ifndef PIXELPART_CURVE3_H
+#define PIXELPART_CURVE3_H
 
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Reference.hpp>
 
 namespace godot {
-class PixelpartPath : public Reference {
-	GODOT_CLASS(PixelpartPath, Reference)
+class PixelpartCurve3 : public Reference {
+	GODOT_CLASS(PixelpartCurve3, Reference)
 
 public:
 	enum class ObjectType {
 		none,
 		particle_emitter,
-		sprite,
+		particle_type,
 		force_field,
 		collider
 	};
 
 	static void _register_methods();
 
-	PixelpartPath();
+	PixelpartCurve3();
 
 	void _init();
-	void init(pixelpart::Curve<pixelpart::vec2d>* path, pixelpart::ParticleEngine* engine, ObjectType type);
+	void init(pixelpart::Curve<pixelpart::vec3d>* curve, pixelpart::ParticleEngine* engine, ObjectType type);
 
-	Vector2 get(float t) const;
-	Vector2 get_point(int index) const;
+	Vector3 get(float t) const;
+	Vector3 get_point(int index) const;
 
-	void set(Vector2 value);
-	void add_point(float t, Vector2 value);
-	void set_point(int index, Vector2 value);
-	void move_point(int index, Vector2 delta);
+	void set(Vector3 value);
+	void add_point(float t, Vector3 value);
+	void set_point(int index, Vector3 value);
+	void move_point(int index, Vector3 delta);
 	void shift_point(int index, float delta);
 	void remove_point(int index);
 	void clear();
 	int get_num_points() const;
 
-	void move(Vector2 delta);
+	void move(Vector3 delta);
 	void shift(float delta);
 
 	void set_interpolation(int method);
@@ -50,7 +50,7 @@ public:
 private:
 	void update_simulation();
 
-	pixelpart::Curve<pixelpart::vec2d>* nativePath = nullptr;
+	pixelpart::Curve<pixelpart::vec3d>* nativeCurve = nullptr;
 	pixelpart::ParticleEngine* nativeParticleEngine = nullptr;
 	ObjectType objectType = ObjectType::none;
 };

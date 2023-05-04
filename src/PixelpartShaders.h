@@ -23,6 +23,8 @@ public:
 	RID get_shader(const std::string& shaderSource, const std::string& shaderType, const std::string& renderMode);
 
 private:
+	std::string replace(std::string str, const std::string& from, const std::string& to);
+
 	static PixelpartShaders* instance;
 
 	std::unordered_map<std::string, RID> shaders;
