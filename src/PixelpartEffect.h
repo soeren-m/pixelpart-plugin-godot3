@@ -6,6 +6,7 @@
 #include "PixelpartParticleType.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
+#include "PixelpartSortUtil.h"
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
