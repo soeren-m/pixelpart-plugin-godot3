@@ -1,6 +1,7 @@
 #include "PixelpartEffect.h"
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
+#include "ParticleSolverCPU.h"
 #include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
 #include <World.hpp>
@@ -62,7 +63,7 @@ PixelpartEffect::PixelpartEffect() {
 		particleCapacity = static_cast<uint32_t>(std::max((int)settings->get_setting("pixelpart/particle_capacity"), 1));
 	}
 
-	particleEngine = std::make_unique<pixelpart::ParticleEngine>(nullptr, particleCapacity);
+	particleEngine = pixelpart::ParticleEngine::createUnique<pixelpart::ParticleSolverCPU>(nullptr, particleCapacity);
 }
 PixelpartEffect::~PixelpartEffect() {
 	VisualServer* vs = VisualServer::get_singleton();

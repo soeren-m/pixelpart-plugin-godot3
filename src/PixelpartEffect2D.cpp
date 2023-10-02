@@ -1,6 +1,7 @@
 #include "PixelpartEffect2D.h"
 #include "PixelpartShaders.h"
 #include "PixelpartUtil.h"
+#include "ParticleSolverCPU.h"
 #include <VisualServer.hpp>
 #include <ProjectSettings.hpp>
 #include <ImageTexture.hpp>
@@ -58,7 +59,7 @@ PixelpartEffect2D::PixelpartEffect2D() {
 		particleCapacity = static_cast<uint32_t>(std::max((int)settings->get_setting("pixelpart/particle_capacity"), 1));
 	}
 
-	particleEngine = std::make_unique<pixelpart::ParticleEngine>(nullptr, particleCapacity);
+	particleEngine = pixelpart::ParticleEngine::createUnique<pixelpart::ParticleSolverCPU>(nullptr, particleCapacity);
 }
 PixelpartEffect2D::~PixelpartEffect2D() {
 	VisualServer* vs = VisualServer::get_singleton();
