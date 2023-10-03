@@ -10,7 +10,10 @@
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
-#include <SpatialMaterial.hpp>
+#include <ArrayMesh.hpp>
+#include <Shader.hpp>
+#include <ShaderMaterial.hpp>
+#include <ImageTexture.hpp>
 
 namespace godot {
 class PixelpartEffect : public Spatial {
@@ -49,11 +52,6 @@ public:
 	void set_frame_rate(float r);
 	float get_frame_rate() const;
 
-	void set_flip_h(bool flip);
-	void set_flip_v(bool flip);
-	bool get_flip_h() const;
-	bool get_flip_v() const;
-
 	float get_import_scale() const;
 
 	void set_effect(Ref<PixelpartEffectResource> effectRes);
@@ -88,10 +86,10 @@ private:
 			std::vector<pixelpart::floatd> life;
 		};
 
-		RID immediate;
-		RID instance;
-		RID material;
-		RID shader;
+		RID instanceRID;
+		Ref<ArrayMesh> mesh;
+		Ref<Shader> shader;
+		Ref<ShaderMaterial> shaderMaterial;
 
 		std::vector<std::string> textures;
 
@@ -101,11 +99,11 @@ private:
 		std::unordered_map<uint32_t, ParticleTrail> trails;
 	};
 
-	void draw_particles(const pixelpart::ParticleType& particleType, ParticleMeshInstance& meshInstance);
+	void draw_particles(uint32_t particleTypeIndex);
 
-	void add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
-	void add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
-	void add_particle_trails(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale);
+	void add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale);
+	void add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale);
+	void add_particle_trails(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale);
 
 	pixelpart::mat3d rotation3d(const pixelpart::vec3d& angle);
 	pixelpart::mat3d lookAt(const pixelpart::vec3d& direction);
@@ -127,11 +125,8 @@ private:
 	float speed = 1.0f;
 	float timeStep = 1.0f / 60.0f;
 
-	bool flipH = false;
-	bool flipV = false;
-
 	std::vector<ParticleMeshInstance> particleMeshInstances;
-	std::unordered_map<std::string, RID> textures;
+	std::unordered_map<std::string, Ref<ImageTexture>> textures;
 };
 }
 

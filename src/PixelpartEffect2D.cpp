@@ -68,10 +68,6 @@ PixelpartEffect2D::~PixelpartEffect2D() {
 		vs->free_rid(inst.canvasItem);
 		vs->free_rid(inst.material);
 	}
-
-	for(auto& entry : textures) {
-		vs->free_rid(entry.second);
-	}
 }
 
 void PixelpartEffect2D::_init() {
@@ -114,13 +110,17 @@ void PixelpartEffect2D::_process(float dt) {
 	}
 }
 void PixelpartEffect2D::draw() {
-	Viewport* viewport = get_viewport();
-	if(!viewport) {
+	if(!particleEngine) {
 		return;
 	}
 
 	const pixelpart::Effect* effect = particleEngine->getEffect();
 	if(!effect) {
+		return;
+	}
+
+	Viewport* viewport = get_viewport();
+	if(!viewport) {
 		return;
 	}
 
@@ -215,10 +215,6 @@ void PixelpartEffect2D::set_effect(Ref<PixelpartEffectResource> effectRes) {
 		vs->free_rid(inst.material);
 	}
 
-	for(auto& entry : textures) {
-		vs->free_rid(entry.second);
-	}
-
 	particleMeshInstances.clear();
 	particleEmitters.clear();
 	particleTypes.clear();
@@ -270,25 +266,29 @@ void PixelpartEffect2D::set_effect(Ref<PixelpartEffectResource> effectRes) {
 				particleMeshInstances.push_back(ParticleMeshInstance{
 					vs->canvas_item_create(),
 					vs->material_create(),
-					shaders->get_shader(buildResult.code,
-						"canvas_item",
-						(particleType.blendMode == pixelpart::BlendMode::additive) ? "blend_add" :
-						(particleType.blendMode == pixelpart::BlendMode::subtractive) ? "blend_sub" :
-						"blend_mix"),
+					shaders->get_canvas_shader(buildResult.code,
+						particleType.blendMode),
 					buildResult.textureIds
 				});
 			}
 
 			for(const auto& resource : effectResource->get_project_resources().images) {
 				PoolByteArray imageData;
-				imageData.resize(resource.second.data.size());
-				memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
+				imageData.resize(static_cast<int64_t>(resource.second.data.size()));
+
+				std::memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
 
 				Ref<Image> image;
 				image.instance();
-				image->create_from_data(resource.second.width, resource.second.height, false, Image::FORMAT_RGBA8, imageData);
+				image->create_from_data(
+					static_cast<int32_t>(resource.second.width),
+					static_cast<int32_t>(resource.second.height),
+					false, Image::FORMAT_RGBA8, imageData);
 
-				textures[resource.first] = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
+				Ref<ImageTexture> imageTexture;
+				imageTexture.instance();
+				imageTexture->create_from_image(image);
+				textures[resource.first] =  imageTexture;
 			}
 		}
 		catch(std::exception& e) {
@@ -450,11 +450,12 @@ void PixelpartEffect2D::draw_particles(const pixelpart::ParticleType& particleTy
 	const pixelpart::floatd scaleX = static_cast<pixelpart::floatd>(get_import_scale()) * (flipH ? -1.0 : +1.0);
 	const pixelpart::floatd scaleY = static_cast<pixelpart::floatd>(get_import_scale()) * (flipV ? -1.0 : +1.0);
 
-	vs->material_set_shader(meshInstance.material, meshInstance.shader);
+	vs->material_set_shader(meshInstance.material, meshInstance.shader->get_rid());
 	vs->material_set_param(meshInstance.material, "EFFECT_TIME", static_cast<float>(particleEngine->getTime()));
 	vs->material_set_param(meshInstance.material, "OBJECT_TIME", static_cast<float>(particleEngine->getTime() - particleEmitter.lifetimeStart));
 	for(std::size_t t = 0; t < meshInstance.textures.size(); t++) {
-		vs->material_set_param(meshInstance.material, String("TEXTURE") + String::num_int64(t), textures.at(meshInstance.textures[t]));
+		String samplerName = String("TEXTURE") + String::num_int64(t);
+		vs->material_set_param(meshInstance.material, samplerName, textures.at(meshInstance.textures[t]));
 	}
 
 	vs->canvas_item_set_parent(meshInstance.canvasItem, get_canvas_item());

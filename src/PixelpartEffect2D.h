@@ -9,6 +9,8 @@
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Node2D.hpp>
+#include <Shader.hpp>
+#include <ImageTexture.hpp>
 
 namespace godot {
 class PixelpartEffect2D : public Node2D {
@@ -93,7 +95,7 @@ private:
 
 		RID canvasItem;
 		RID material;
-		RID shader;
+		Ref<Shader> shader;
 
 		std::vector<std::string> textures;
 
@@ -131,7 +133,7 @@ private:
 	bool flipV = true;
 
 	std::vector<ParticleMeshInstance> particleMeshInstances;
-	std::unordered_map<std::string, RID> textures;
+	std::unordered_map<std::string, Ref<ImageTexture>> textures;
 };
 }
 

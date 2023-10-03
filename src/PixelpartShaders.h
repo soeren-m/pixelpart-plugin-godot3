@@ -1,8 +1,10 @@
 #ifndef PIXELPART_SHADERS_H
 #define PIXELPART_SHADERS_H
 
+#include "BlendMode.h"
 #include <Godot.hpp>
 #include <Node.hpp>
+#include <Shader.hpp>
 #include <unordered_map>
 #include <string>
 
@@ -20,14 +22,23 @@ public:
 
 	void _init();
 
-	RID get_shader(const std::string& shaderSource, const std::string& shaderType, const std::string& renderMode);
+	Ref<Shader> get_canvas_shader(const std::string& shaderSource,
+		pixelpart::BlendMode blendMode);
+	Ref<Shader> get_spatial_shader(const std::string& shaderSource,
+		pixelpart::BlendMode blendMode);
+
+	Ref<Shader> get_shader(const std::string& shaderSource,
+		const std::string& shaderType,
+		const std::string& renderMode,
+		const std::string& vertexShaderSource,
+		const std::string& additionalFragmentShaderSource);
 
 private:
 	std::string replace(std::string str, const std::string& from, const std::string& to);
 
 	static PixelpartShaders* instance;
 
-	std::unordered_map<std::string, RID> shaders;
+	std::unordered_map<std::string, Ref<Shader>> shaders;
 };
 }
 

@@ -7,8 +7,6 @@
 #include <World.hpp>
 #include <Viewport.hpp>
 #include <Camera.hpp>
-#include <Mesh.hpp>
-#include <ImageTexture.hpp>
 
 namespace godot {
 void PixelpartEffect::_register_methods() {
@@ -27,8 +25,6 @@ void PixelpartEffect::_register_methods() {
 		GODOT_METHOD_RPC_MODE_DISABLED,
 		GODOT_PROPERTY_USAGE_DEFAULT,
 		GODOT_PROPERTY_HINT_EXP_RANGE, "1.0,100.0,1.0");
-	register_property<PixelpartEffect, bool>("flip_h", &PixelpartEffect::set_flip_h, &PixelpartEffect::get_flip_h, false);
-	register_property<PixelpartEffect, bool>("flip_v", &PixelpartEffect::set_flip_v, &PixelpartEffect::get_flip_v, false);
 	register_method("_init", &PixelpartEffect::_init);
 	register_method("_enter_tree", &PixelpartEffect::_enter_tree);
 	register_method("_exit_tree", &PixelpartEffect::_exit_tree);
@@ -69,13 +65,7 @@ PixelpartEffect::~PixelpartEffect() {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	for(ParticleMeshInstance& inst : particleMeshInstances) {
-		vs->free_rid(inst.immediate);
-		vs->free_rid(inst.instance);
-		vs->free_rid(inst.material);
-	}
-
-	for(auto& entry : textures) {
-		vs->free_rid(entry.second);
+		vs->free_rid(inst.instanceRID);
 	}
 }
 
@@ -87,9 +77,6 @@ void PixelpartEffect::_init() {
 	loopTime = 1.0f;
 	speed = 1.0f;
 	timeStep = 1.0f / 60.0f;
-
-	flipH = false;
-	flipV = false;
 }
 void PixelpartEffect::_enter_tree() {
 	VisualServer::get_singleton()->connect("frame_pre_draw", this, "draw");
@@ -119,8 +106,7 @@ void PixelpartEffect::_process(float dt) {
 	}
 }
 void PixelpartEffect::draw() {
-	Viewport* viewport = get_viewport();
-	if(!viewport) {
+	if(!particleEngine) {
 		return;
 	}
 
@@ -129,8 +115,13 @@ void PixelpartEffect::draw() {
 		return;
 	}
 
+	Viewport* viewport = get_viewport();
+	if(!viewport) {
+		return;
+	}
+
 	for(uint32_t particleTypeIndex = 0; particleTypeIndex < effect->particleTypes.getCount(); particleTypeIndex++) {
-		draw_particles(effect->particleTypes.getByIndex(particleTypeIndex), particleMeshInstances[particleTypeIndex]);
+		draw_particles(particleTypeIndex);
 	}
 }
 
@@ -181,19 +172,6 @@ float PixelpartEffect::get_frame_rate() const {
 	return 1.0f / timeStep;
 }
 
-void PixelpartEffect::set_flip_h(bool flip) {
-	flipH = flip;
-}
-void PixelpartEffect::set_flip_v(bool flip) {
-	flipV = flip;
-}
-bool PixelpartEffect::get_flip_h() const {
-	return flipH;
-}
-bool PixelpartEffect::get_flip_v() const {
-	return flipV;
-}
-
 float PixelpartEffect::get_import_scale() const {
 	if(!effectResource.is_valid()) {
 		return 1.0f;
@@ -207,13 +185,7 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 	PixelpartShaders* shaders = PixelpartShaders::get_instance();
 
 	for(ParticleMeshInstance& inst : particleMeshInstances) {
-		vs->free_rid(inst.immediate);
-		vs->free_rid(inst.instance);
-		vs->free_rid(inst.material);
-	}
-
-	for(auto& entry : textures) {
-		vs->free_rid(entry.second);
+		vs->free_rid(inst.instanceRID);
 	}
 
 	particleMeshInstances.clear();
@@ -224,79 +196,95 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 	textures.clear();
 
 	effectResource = effectRes;
+	if(effectResource.is_null()) {
+		particleEngine->setEffect(nullptr);
 
-	if(effectResource.is_valid()) {
-		effectResource->load();
+		return;
+	}
 
-		nativeEffect = effectResource->get_project().effect;
-		particleEngine->setEffect(&nativeEffect);
+	effectResource->load();
 
-		try {
-			for(pixelpart::ParticleEmitter& particleEmitter : nativeEffect.particleEmitters) {
-				Ref<PixelpartParticleEmitter> emitterRef;
-				emitterRef.instance();
-				emitterRef->init(effectResource, &particleEmitter, particleEngine.get());
-				particleEmitters[particleEmitter.name] = emitterRef;
-			}
+	nativeEffect = effectResource->get_project().effect;
+	particleEngine->setEffect(&nativeEffect);
 
-			for(pixelpart::ParticleType& particleType : nativeEffect.particleTypes) {
-				Ref<PixelpartParticleType> particleTypeRef;
-				particleTypeRef.instance();
-				particleTypeRef->init(effectResource, &particleType, particleEngine.get());
-				particleTypes[particleType.name] = particleTypeRef;
-			}
-
-			for(pixelpart::ForceField& forceField : nativeEffect.forceFields) {
-				Ref<PixelpartForceField> forceFieldRef;
-				forceFieldRef.instance();
-				forceFieldRef->init(effectResource, &forceField, particleEngine.get());
-				forceFields[forceField.name] = forceFieldRef;
-			}
-
-			for(pixelpart::Collider& collider : nativeEffect.colliders) {
-				Ref<PixelpartCollider> colliderRef;
-				colliderRef.instance();
-				colliderRef->init(effectResource, &collider, particleEngine.get());
-				colliders[collider.name] = colliderRef;
-			}
-
-			for(const pixelpart::ParticleType& particleType : nativeEffect.particleTypes) {
-				pixelpart::ShaderGraph::BuildResult buildResult;
-				particleType.shader.build(buildResult);
-
-				particleMeshInstances.push_back(ParticleMeshInstance{
-					vs->immediate_create(),
-					vs->instance_create(),
-					vs->material_create(),
-					shaders->get_shader(buildResult.code,
-						"spatial",
-						(particleType.blendMode == pixelpart::BlendMode::additive) ? "cull_disabled,unshaded,blend_add" :
-						(particleType.blendMode == pixelpart::BlendMode::subtractive) ? "cull_disabled,unshaded,blend_sub" :
-						"cull_disabled,unshaded,blend_mix"),
-					buildResult.textureIds
-				});
-			}
-
-			for(const auto& resource : effectResource->get_project_resources().images) {
-				PoolByteArray imageData;
-				imageData.resize(resource.second.data.size());
-				memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
-
-				Ref<Image> image;
-				image.instance();
-				image->create_from_data(resource.second.width, resource.second.height, false, Image::FORMAT_RGBA8, imageData);
-
-				textures[resource.first] = vs->texture_create_from_image(image, Texture::FLAG_FILTER | Texture::FLAG_REPEAT);
-			}
+	try {
+		for(pixelpart::ParticleEmitter& particleEmitter : nativeEffect.particleEmitters) {
+			Ref<PixelpartParticleEmitter> emitterRef;
+			emitterRef.instance();
+			emitterRef->init(effectResource, &particleEmitter, particleEngine.get());
+			particleEmitters[particleEmitter.name] = emitterRef;
 		}
-		catch(std::exception& e) {
-			particleEngine->setEffect(nullptr);
 
-			Godot::print_error(String(e.what()), __FUNCTION__, "PixelpartEffect.cpp", __LINE__);
+		for(pixelpart::ParticleType& particleType : nativeEffect.particleTypes) {
+			Ref<PixelpartParticleType> particleTypeRef;
+			particleTypeRef.instance();
+			particleTypeRef->init(effectResource, &particleType, particleEngine.get());
+			particleTypes[particleType.name] = particleTypeRef;
+		}
+
+		for(pixelpart::ForceField& forceField : nativeEffect.forceFields) {
+			Ref<PixelpartForceField> forceFieldRef;
+			forceFieldRef.instance();
+			forceFieldRef->init(effectResource, &forceField, particleEngine.get());
+			forceFields[forceField.name] = forceFieldRef;
+		}
+
+		for(pixelpart::Collider& collider : nativeEffect.colliders) {
+			Ref<PixelpartCollider> colliderRef;
+			colliderRef.instance();
+			colliderRef->init(effectResource, &collider, particleEngine.get());
+			colliders[collider.name] = colliderRef;
+		}
+
+		for(const pixelpart::ParticleType& particleType : nativeEffect.particleTypes) {
+			pixelpart::ShaderGraph::BuildResult buildResult;
+			particleType.shader.build(buildResult);
+
+			Ref<ArrayMesh> mesh;
+			mesh.instance();
+
+			Ref<Shader> shader = shaders->get_spatial_shader(buildResult.code,
+				particleType.blendMode);
+
+			Ref<ShaderMaterial> shaderMaterial;
+			shaderMaterial.instance();
+			shaderMaterial->set_shader(shader);
+
+			RID instanceRID = vs->instance_create();
+			vs->instance_set_base(instanceRID, mesh->get_rid());
+
+			particleMeshInstances.push_back(ParticleMeshInstance{
+				instanceRID,
+				mesh,
+				shader,
+				shaderMaterial,
+				buildResult.textureIds
+			});
+		}
+
+		for(const auto& resource : effectResource->get_project_resources().images) {
+			PoolByteArray imageData;
+			imageData.resize(static_cast<int64_t>(resource.second.data.size()));
+
+			std::memcpy(imageData.write().ptr(), resource.second.data.data(), resource.second.data.size());
+
+			Ref<Image> image;
+			image.instance();
+			image->create_from_data(
+				static_cast<int32_t>(resource.second.width),
+				static_cast<int32_t>(resource.second.height),
+				false, Image::FORMAT_RGBA8, imageData);
+
+			Ref<ImageTexture> imageTexture;
+			imageTexture.instance();
+			imageTexture->create_from_image(image);
+			textures[resource.first] =  imageTexture;
 		}
 	}
-	else {
+	catch(std::exception& e) {
 		particleEngine->setEffect(nullptr);
+
+		Godot::print_error(String(e.what()), __FUNCTION__, "PixelpartEffect.cpp", __LINE__);
 	}
 }
 Ref<PixelpartEffectResource> PixelpartEffect::get_effect() const {
@@ -432,44 +420,47 @@ Ref<PixelpartCollider> PixelpartEffect::get_collider_at_index(int index) const {
 	return Ref<PixelpartCollider>();
 }
 
-void PixelpartEffect::draw_particles(const pixelpart::ParticleType& particleType, ParticleMeshInstance& meshInstance) {
-	VisualServer* vs = VisualServer::get_singleton();
-	vs->immediate_clear(meshInstance.immediate);
+void PixelpartEffect::draw_particles(uint32_t particleTypeIndex) {
+	const pixelpart::Effect* effect = particleEngine->getEffect();
+	const pixelpart::ParticleType& particleType = effect->particleTypes.getByIndex(particleTypeIndex);
+	const pixelpart::ParticleEmitter& particleEmitter = effect->particleEmitters.get(particleType.parentId);
+
+	ParticleMeshInstance& meshInstance = particleMeshInstances.at(particleTypeIndex);
+	meshInstance.mesh->clear_surfaces();
 
 	if(!is_visible() || !particleType.visible) {
 		return;
 	}
 
-	const pixelpart::Effect* effect = particleEngine->getEffect();
-	const pixelpart::ParticleEmitter& particleEmitter = effect->particleEmitters.get(particleType.parentId);
-	const uint32_t particleTypeIndex = effect->particleTypes.findById(particleType.id);
-	const uint32_t numParticles = particleEngine->getNumParticles(particleTypeIndex);
 	const pixelpart::ParticleData& particles = particleEngine->getParticles(particleTypeIndex);
-	const pixelpart::vec3d scale = pixelpart::vec3d(
-		flipH ? -1.0 : +1.0,
-		flipV ? -1.0 : +1.0,
-		1.0) * static_cast<pixelpart::floatd>(get_import_scale());
+	uint32_t numParticles = particleEngine->getNumParticles(particleTypeIndex);
+	pixelpart::floatd scale = static_cast<pixelpart::floatd>(get_import_scale());
 
-	vs->material_set_shader(meshInstance.material, meshInstance.shader);
-	vs->material_set_param(meshInstance.material, "EFFECT_TIME", static_cast<float>(particleEngine->getTime()));
-	vs->material_set_param(meshInstance.material, "OBJECT_TIME", static_cast<float>(particleEngine->getTime() - particleEmitter.lifetimeStart));
+	Ref<ShaderMaterial> shaderMaterial = meshInstance.shaderMaterial;
+	shaderMaterial->set_shader_param("EFFECT_TIME", static_cast<float>(particleEngine->getTime()));
+	shaderMaterial->set_shader_param("OBJECT_TIME", static_cast<float>(particleEngine->getTime() - particleEmitter.lifetimeStart));
+
 	for(std::size_t t = 0; t < meshInstance.textures.size(); t++) {
-		vs->material_set_param(meshInstance.material, String("TEXTURE") + String::num_int64(t), textures.at(meshInstance.textures[t]));
+		String samplerName = String("TEXTURE") + String::num_int64(t);
+		shaderMaterial->set_shader_param(samplerName, textures.at(meshInstance.textures[t]));
 	}
 
-	vs->instance_set_base(meshInstance.instance, meshInstance.immediate);
-	vs->instance_geometry_set_material_override(meshInstance.instance, meshInstance.material);
-	vs->instance_set_scenario(meshInstance.instance, get_world()->get_scenario());
-	vs->instance_set_transform(meshInstance.instance, get_global_transform());
+	VisualServer* vs = VisualServer::get_singleton();
+	vs->instance_set_scenario(meshInstance.instanceRID, get_world()->get_scenario());
+	vs->instance_set_transform(meshInstance.instanceRID, get_global_transform());
 
 	add_particle_mesh(meshInstance,
 		particleType,
 		particles,
 		numParticles,
 		scale);
+
+	if(meshInstance.mesh->get_surface_count() > 0) {
+		meshInstance.mesh->surface_set_material(0, shaderMaterial);
+	}
 }
 
-void PixelpartEffect::add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale) {
+void PixelpartEffect::add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale) {
 	switch(particleType.renderer) {
 		case pixelpart::ParticleType::Renderer::sprite:
 			add_particle_sprites(meshInstance, particleType, particles, numParticles, scale);
@@ -480,8 +471,12 @@ void PixelpartEffect::add_particle_mesh(ParticleMeshInstance& meshInstance, cons
 	}
 }
 
-void PixelpartEffect::add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale) {
+void PixelpartEffect::add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale) {
 	const pixelpart::floatd packFactor = 10000.0;
+
+	if(numParticles == 0u) {
+		return;
+	}
 
 	const pixelpart::ParticleEmitter& particleEmitter = nativeEffect.particleEmitters.get(particleType.parentId);
 	pixelpart::floatd alpha = std::fmod(particleEngine->getTime() - particleEmitter.lifetimeStart, particleEmitter.lifetimeDuration) / particleEmitter.lifetimeDuration;
@@ -544,95 +539,165 @@ void PixelpartEffect::add_particle_sprites(ParticleMeshInstance& meshInstance, c
 	pixelpart::vec3d cameraRight = fromGd(camera->get_global_transform().basis.x);
 	pixelpart::vec3d cameraUp = fromGd(camera->get_global_transform().basis.y);
 
-	VisualServer* vs = VisualServer::get_singleton();
-	vs->immediate_begin(meshInstance.immediate, Mesh::PRIMITIVE_TRIANGLES);
+	Ref<ArrayMesh> mesh = meshInstance.mesh;
 
-	for(std::size_t p = 0; p < numParticles; p++) {
+	PoolIntArray indexArray;
+	PoolVector3Array vertexArray;
+	PoolRealArray tangentArray;
+	PoolVector2Array uvArray;
+	PoolVector2Array uv2Array;
+	PoolColorArray colorArray;
+	indexArray.resize(numParticles * 6);
+	vertexArray.resize(numParticles * 4);
+	tangentArray.resize(numParticles * 4 * 4);
+	uvArray.resize(numParticles * 4);
+	uv2Array.resize(numParticles * 4);
+	colorArray.resize(numParticles * 4);
+
+	int32_t* indices = indexArray.write().ptr();
+	Vector3* positions = vertexArray.write().ptr();
+	float* tangents = tangentArray.write().ptr();
+	Color* colors = colorArray.write().ptr();
+	float* uvs = reinterpret_cast<float*>(uvArray.write().ptr());
+	float* uvs2 = reinterpret_cast<float*>(uv2Array.write().ptr());
+
+	for(int32_t p = 0; p < static_cast<int32_t>(numParticles); p++) {
+		indices[p * 6 + 0] = p * 4 + 0;
+		indices[p * 6 + 1] = p * 4 + 1;
+		indices[p * 6 + 2] = p * 4 + 3;
+		indices[p * 6 + 3] = p * 4 + 1;
+		indices[p * 6 + 4] = p * 4 + 2;
+		indices[p * 6 + 5] = p * 4 + 3;
+	}
+
+	for(uint32_t p = 0; p < numParticles; p++) {
 		pixelpart::mat3d rotationMatrix = rotation3d(particleRenderData->rotation[p]);
 		pixelpart::vec3d pivot = particleType.pivot * particleRenderData->size[p];
-		pixelpart::vec3d worldPosition[4];
-		pixelpart::vec3d localPosition[4] = {
+		pixelpart::vec3d position[4] = {
 			rotationMatrix * (pixelpart::vec3d(-0.5, -0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot,
-			rotationMatrix * (pixelpart::vec3d(+0.5, -0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot,
+			rotationMatrix * (pixelpart::vec3d(-0.5, +0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot,
 			rotationMatrix * (pixelpart::vec3d(+0.5, +0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot,
-			rotationMatrix * (pixelpart::vec3d(-0.5, +0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot };
+			rotationMatrix * (pixelpart::vec3d(+0.5, -0.5, 0.0) * particleRenderData->size[p] - pivot) + pivot };
 
 		switch(particleType.alignmentMode) {
 			case pixelpart::AlignmentMode::camera: {
-				worldPosition[0] = particleRenderData->globalPosition[p] + cameraRight * localPosition[0].x + cameraUp * localPosition[0].y;
-				worldPosition[1] = particleRenderData->globalPosition[p] + cameraRight * localPosition[1].x + cameraUp * localPosition[1].y;
-				worldPosition[2] = particleRenderData->globalPosition[p] + cameraRight * localPosition[2].x + cameraUp * localPosition[2].y;
-				worldPosition[3] = particleRenderData->globalPosition[p] + cameraRight * localPosition[3].x + cameraUp * localPosition[3].y;
+				position[0] = particleRenderData->globalPosition[p] + cameraRight * position[0].x + cameraUp * position[0].y;
+				position[1] = particleRenderData->globalPosition[p] + cameraRight * position[1].x + cameraUp * position[1].y;
+				position[2] = particleRenderData->globalPosition[p] + cameraRight * position[2].x + cameraUp * position[2].y;
+				position[3] = particleRenderData->globalPosition[p] + cameraRight * position[3].x + cameraUp * position[3].y;
 				break;
 			}
 			case pixelpart::AlignmentMode::motion: {
 				pixelpart::mat3d lookAtMatrix = lookAt(particleRenderData->velocity[p]);
-				worldPosition[0] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[0];
-				worldPosition[1] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[1];
-				worldPosition[2] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[2];
-				worldPosition[3] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[3];
+				position[0] = particleRenderData->globalPosition[p] + lookAtMatrix * position[0];
+				position[1] = particleRenderData->globalPosition[p] + lookAtMatrix * position[1];
+				position[2] = particleRenderData->globalPosition[p] + lookAtMatrix * position[2];
+				position[3] = particleRenderData->globalPosition[p] + lookAtMatrix * position[3];
 				break;
 			}
 			case pixelpart::AlignmentMode::emission: {
 				pixelpart::mat3d lookAtMatrix = lookAt(particleEmitter.position.get(alpha) - particleRenderData->globalPosition[p]);
-				worldPosition[0] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[0];
-				worldPosition[1] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[1];
-				worldPosition[2] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[2];
-				worldPosition[3] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[3];
+				position[0] = particleRenderData->globalPosition[p] + lookAtMatrix * position[0];
+				position[1] = particleRenderData->globalPosition[p] + lookAtMatrix * position[1];
+				position[2] = particleRenderData->globalPosition[p] + lookAtMatrix * position[2];
+				position[3] = particleRenderData->globalPosition[p] + lookAtMatrix * position[3];
 				break;
 			}
 			case pixelpart::AlignmentMode::emitter: {
 				pixelpart::mat3d lookAtMatrix = rotation3d(particleEmitter.orientation.get(alpha));
-				worldPosition[0] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[0];
-				worldPosition[1] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[1];
-				worldPosition[2] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[2];
-				worldPosition[3] = particleRenderData->globalPosition[p] + lookAtMatrix * localPosition[3];
+				position[0] = particleRenderData->globalPosition[p] + lookAtMatrix * position[0];
+				position[1] = particleRenderData->globalPosition[p] + lookAtMatrix * position[1];
+				position[2] = particleRenderData->globalPosition[p] + lookAtMatrix * position[2];
+				position[3] = particleRenderData->globalPosition[p] + lookAtMatrix * position[3];
 				break;
 			}
 			default: {
-				worldPosition[0] = particleRenderData->globalPosition[p] + localPosition[0];
-				worldPosition[1] = particleRenderData->globalPosition[p] + localPosition[1];
-				worldPosition[2] = particleRenderData->globalPosition[p] + localPosition[2];
-				worldPosition[3] = particleRenderData->globalPosition[p] + localPosition[3];
+				position[0] = particleRenderData->globalPosition[p] + position[0];
+				position[1] = particleRenderData->globalPosition[p] + position[1];
+				position[2] = particleRenderData->globalPosition[p] + position[2];
+				position[3] = particleRenderData->globalPosition[p] + position[3];
 				break;
 			}
 		}
 
-		vs->immediate_tangent(meshInstance.immediate, Plane(
-			toGd(particleRenderData->velocity[p]), 0.0f));
-		vs->immediate_color(meshInstance.immediate,
-			toGd(particleRenderData->color[p] * 0.1 +
-			pixelpart::vec4d(glm::floor(particleRenderData->force[p] * packFactor) + pixelpart::vec3d(packFactor), packFactor)));
-		vs->immediate_uv2(meshInstance.immediate, Vector2(
-			static_cast<float>(particleRenderData->life[p]),
-			static_cast<float>(particleRenderData->id[p])));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(0.0f, 0.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[0] * scale));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(1.0f, 0.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[1] * scale));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(0.0f, 1.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[3] * scale));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(1.0f, 0.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[1] * scale));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(1.0f, 1.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[2] * scale));
-
-		vs->immediate_uv(meshInstance.immediate, Vector2(0.0f, 1.0f));
-		vs->immediate_vertex(meshInstance.immediate, toGd(worldPosition[3] * scale));
+		positions[p * 4 + 0] = toGd(position[0] * scale);
+		positions[p * 4 + 1] = toGd(position[1] * scale);
+		positions[p * 4 + 2] = toGd(position[2] * scale);
+		positions[p * 4 + 3] = toGd(position[3] * scale);
 	}
 
-	vs->immediate_end(meshInstance.immediate);
+	for(uint32_t p = 0; p < numParticles; p++) {
+		Vector3 velocity = toGd(particleRenderData->velocity[p]);
+
+		tangents[p * 4 * 4 + 0] = velocity.x;
+		tangents[p * 4 * 4 + 1] = velocity.y;
+		tangents[p * 4 * 4 + 2] = velocity.z;
+		tangents[p * 4 * 4 + 3] = 0.0f;
+		tangents[p * 4 * 4 + 4] = velocity.x;
+		tangents[p * 4 * 4 + 5] = velocity.y;
+		tangents[p * 4 * 4 + 6] = velocity.z;
+		tangents[p * 4 * 4 + 7] = 0.0f;
+		tangents[p * 4 * 4 + 8] = velocity.x;
+		tangents[p * 4 * 4 + 9] = velocity.y;
+		tangents[p * 4 * 4 + 10] = velocity.z;
+		tangents[p * 4 * 4 + 11] = 0.0f;
+		tangents[p * 4 * 4 + 12] = velocity.x;
+		tangents[p * 4 * 4 + 13] = velocity.y;
+		tangents[p * 4 * 4 + 14] = velocity.z;
+		tangents[p * 4 * 4 + 15] = 0.0f;
+	}
+
+	for(uint32_t p = 0; p < numParticles; p++) {
+		Color packedColor = toGd(particleRenderData->color[p] * 0.1 +
+			pixelpart::vec4d(glm::floor(particleRenderData->force[p] * packFactor) + pixelpart::vec3d(packFactor), packFactor));
+
+		colors[p * 4 + 0] = packedColor;
+		colors[p * 4 + 1] = packedColor;
+		colors[p * 4 + 2] = packedColor;
+		colors[p * 4 + 3] = packedColor;
+	}
+
+	for(uint32_t p = 0; p < numParticles; p++) {
+		uvs[p * 4 * 2 + 0] = 0.0f;
+		uvs[p * 4 * 2 + 1] = 0.0f;
+		uvs[p * 4 * 2 + 2] = 1.0f;
+		uvs[p * 4 * 2 + 3] = 0.0f;
+		uvs[p * 4 * 2 + 4] = 1.0f;
+		uvs[p * 4 * 2 + 5] = 1.0f;
+		uvs[p * 4 * 2 + 6] = 0.0f;
+		uvs[p * 4 * 2 + 7] = 1.0f;
+	}
+
+	for(uint32_t p = 0; p < numParticles; p++) {
+		uvs2[p * 4 * 2 + 0] = static_cast<float>(particleRenderData->life[p]);
+		uvs2[p * 4 * 2 + 1] = static_cast<float>(particleRenderData->id[p]);
+		uvs2[p * 4 * 2 + 2] = static_cast<float>(particleRenderData->life[p]);
+		uvs2[p * 4 * 2 + 3] = static_cast<float>(particleRenderData->id[p]);
+		uvs2[p * 4 * 2 + 4] = static_cast<float>(particleRenderData->life[p]);
+		uvs2[p * 4 * 2 + 5] = static_cast<float>(particleRenderData->id[p]);
+		uvs2[p * 4 * 2 + 6] = static_cast<float>(particleRenderData->life[p]);
+		uvs2[p * 4 * 2 + 7] = static_cast<float>(particleRenderData->id[p]);
+	}
+
+	Array meshArray;
+	meshArray.resize(Mesh::ARRAY_MAX);
+	meshArray[Mesh::ARRAY_VERTEX] = vertexArray;
+	meshArray[Mesh::ARRAY_TANGENT] = tangentArray;
+	meshArray[Mesh::ARRAY_COLOR] = colorArray;
+	meshArray[Mesh::ARRAY_TEX_UV] = uvArray;
+	meshArray[Mesh::ARRAY_TEX_UV2] = uv2Array;
+	meshArray[Mesh::ARRAY_INDEX] = indexArray;
+
+	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, meshArray, Array(),
+		Mesh::ARRAY_FORMAT_VERTEX | Mesh::ARRAY_FORMAT_TANGENT | Mesh::ARRAY_FORMAT_COLOR |
+		Mesh::ARRAY_FORMAT_TEX_UV | Mesh::ARRAY_FORMAT_TEX_UV2 |
+		Mesh::ARRAY_FORMAT_INDEX);
 }
 
-void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, const pixelpart::vec3d& scale) {
+void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scale) {
 	const pixelpart::floatd packFactor = 10000.0;
 
-	if(numParticles < 2) {
+	if(numParticles < 2u) {
 		return;
 	}
 
@@ -764,8 +829,28 @@ void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, co
 		}
 	}
 
-	VisualServer* vs = VisualServer::get_singleton();
-	vs->immediate_begin(meshInstance.immediate, Mesh::PRIMITIVE_TRIANGLES);
+	Ref<ArrayMesh> mesh = meshInstance.mesh;
+
+	PoolIntArray indexArray;
+	PoolVector3Array vertexArray;
+	PoolRealArray tangentArray;
+	PoolVector2Array uvArray;
+	PoolVector2Array uv2Array;
+	PoolColorArray colorArray;
+	indexArray.resize(numParticles * 6);
+	vertexArray.resize(numParticles * 4);
+	tangentArray.resize(numParticles * 4 * 4);
+	uvArray.resize(numParticles * 4);
+	uv2Array.resize(numParticles * 4);
+	colorArray.resize(numParticles * 4);
+
+	int64_t vertexIndex = 0;
+	int32_t* indices = indexArray.write().ptr();
+	Vector3* positions = vertexArray.write().ptr();
+	float* tangents = tangentArray.write().ptr();
+	Color* colors = colorArray.write().ptr();
+	Vector2* uvs = uvArray.write().ptr();
+	Vector2* uvs2 = uv2Array.write().ptr();
 
 	for(auto& entry : meshInstance.trails) {
 		ParticleMeshInstance::ParticleTrail& trail = entry.second;
@@ -817,75 +902,101 @@ void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, co
 			pixelpart::vec3d p1 = (trail.position[p] - n0) * scale;
 			pixelpart::vec3d p2 = (trail.position[p + 1] + n1) * scale;
 			pixelpart::vec3d p3 = (trail.position[p + 1] - n1) * scale;
-			pixelpart::vec2d t0, t1, t2, t3;
+			pixelpart::vec2d uv0, uv1, uv2, uv3;
 
 			switch(particleType.trailRendererSettings.textureRotation) {
 				case 1:
-					t0 = pixelpart::vec2d(trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 1.0);
-					t1 = pixelpart::vec2d(trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 0.0);
-					t2 = pixelpart::vec2d(trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 1.0);
-					t3 = pixelpart::vec2d(trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 0.0);
+					uv0 = pixelpart::vec2d(trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 1.0);
+					uv1 = pixelpart::vec2d(trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 0.0);
+					uv2 = pixelpart::vec2d(trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 1.0);
+					uv3 = pixelpart::vec2d(trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 0.0);
 					break;
 
 				case 2:
-					t0 = pixelpart::vec2d(1.0, 1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
-					t1 = pixelpart::vec2d(0.0, 1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
-					t2 = pixelpart::vec2d(1.0, 1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
-					t3 = pixelpart::vec2d(0.0, 1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
+					uv0 = pixelpart::vec2d(1.0, 1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
+					uv1 = pixelpart::vec2d(0.0, 1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
+					uv2 = pixelpart::vec2d(1.0, 1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
+					uv3 = pixelpart::vec2d(0.0, 1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
 					break;
 
 				case 3: {
-					t0 = pixelpart::vec2d(1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 0.0);
-					t1 = pixelpart::vec2d(1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 1.0);
-					t2 = pixelpart::vec2d(1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 0.0);
-					t3 = pixelpart::vec2d(1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 1.0);
+					uv0 = pixelpart::vec2d(1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 0.0);
+					uv1 = pixelpart::vec2d(1.0 - trail.index[p] * particleType.trailRendererSettings.textureUVFactor, 1.0);
+					uv2 = pixelpart::vec2d(1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 0.0);
+					uv3 = pixelpart::vec2d(1.0 - trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor, 1.0);
 					break;
 				}
 
 				default: {
-					t0 = pixelpart::vec2d(0.0, trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
-					t1 = pixelpart::vec2d(1.0, trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
-					t2 = pixelpart::vec2d(0.0, trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
-					t3 = pixelpart::vec2d(1.0, trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
+					uv0 = pixelpart::vec2d(0.0, trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
+					uv1 = pixelpart::vec2d(1.0, trail.index[p] * particleType.trailRendererSettings.textureUVFactor);
+					uv2 = pixelpart::vec2d(0.0, trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
+					uv3 = pixelpart::vec2d(1.0, trail.index[p + 1] * particleType.trailRendererSettings.textureUVFactor);
 					break;
 				}
 			}
 
-			vs->immediate_tangent(meshInstance.immediate, Plane(toGd(trail.velocity[p]), 0.0f));
-			vs->immediate_color(meshInstance.immediate, toGd(trail.color[p] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p] * packFactor) + pixelpart::vec3d(packFactor), 0.0)));
-			vs->immediate_uv2(meshInstance.immediate, Vector2(trail.life[p], static_cast<float>(entry.first)));
-			vs->immediate_uv(meshInstance.immediate, toGd(t0));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p0));
+			indices[vertexIndex * 6 + 0] = vertexIndex * 4 + 0;
+			indices[vertexIndex * 6 + 1] = vertexIndex * 4 + 2;
+			indices[vertexIndex * 6 + 2] = vertexIndex * 4 + 1;
+			indices[vertexIndex * 6 + 3] = vertexIndex * 4 + 2;
+			indices[vertexIndex * 6 + 4] = vertexIndex * 4 + 3;
+			indices[vertexIndex * 6 + 5] = vertexIndex * 4 + 1;
 
-			vs->immediate_tangent(meshInstance.immediate, Plane(toGd(trail.velocity[p + 1]), 0.0f));
-			vs->immediate_color(meshInstance.immediate, toGd(trail.color[p + 1] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p + 1] * packFactor) + pixelpart::vec3d(packFactor), 0.0)));
-			vs->immediate_uv2(meshInstance.immediate, Vector2(trail.life[p + 1], static_cast<float>(entry.first)));
-			vs->immediate_uv(meshInstance.immediate, toGd(t2));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p2));
+			positions[vertexIndex * 4 + 0] = toGd(p0);
+			positions[vertexIndex * 4 + 1] = toGd(p1);
+			positions[vertexIndex * 4 + 2] = toGd(p2);
+			positions[vertexIndex * 4 + 3] = toGd(p3);
 
-			vs->immediate_tangent(meshInstance.immediate, Plane(toGd(trail.velocity[p]), 0.0f));
-			vs->immediate_color(meshInstance.immediate, toGd(trail.color[p] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p] * packFactor) + pixelpart::vec3d(packFactor), 0.0)));
-			vs->immediate_uv2(meshInstance.immediate, Vector2(trail.life[p], static_cast<float>(entry.first)));
-			vs->immediate_uv(meshInstance.immediate, toGd(t1));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p1));
+			tangents[vertexIndex * 4 * 4 + 0] = static_cast<float>(trail.velocity[p].x);
+			tangents[vertexIndex * 4 * 4 + 1] = static_cast<float>(trail.velocity[p].y);
+			tangents[vertexIndex * 4 * 4 + 2] = static_cast<float>(trail.velocity[p].z);
+			tangents[vertexIndex * 4 * 4 + 3] = 0.0f;
+			tangents[vertexIndex * 4 * 4 + 4] = static_cast<float>(trail.velocity[p].x);
+			tangents[vertexIndex * 4 * 4 + 5] = static_cast<float>(trail.velocity[p].y);
+			tangents[vertexIndex * 4 * 4 + 6] = static_cast<float>(trail.velocity[p].z);
+			tangents[vertexIndex * 4 * 4 + 7] = 0.0f;
+			tangents[vertexIndex * 4 * 4 + 8] = static_cast<float>(trail.velocity[p + 1].x);
+			tangents[vertexIndex * 4 * 4 + 9] = static_cast<float>(trail.velocity[p + 1].y);
+			tangents[vertexIndex * 4 * 4 + 10] = static_cast<float>(trail.velocity[p + 1].z);
+			tangents[vertexIndex * 4 * 4 + 11] = 0.0f;
+			tangents[vertexIndex * 4 * 4 + 12] = static_cast<float>(trail.velocity[p + 1].x);
+			tangents[vertexIndex * 4 * 4 + 13] = static_cast<float>(trail.velocity[p + 1].y);
+			tangents[vertexIndex * 4 * 4 + 14] = static_cast<float>(trail.velocity[p + 1].z);
+			tangents[vertexIndex * 4 * 4 + 15] = 0.0f;
 
-			vs->immediate_tangent(meshInstance.immediate, Plane(toGd(trail.velocity[p + 1]), 0.0f));
-			vs->immediate_color(meshInstance.immediate, toGd(trail.color[p + 1] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p + 1] * packFactor) + pixelpart::vec3d(packFactor), 0.0)));
-			vs->immediate_uv2(meshInstance.immediate, Vector2(trail.life[p + 1], static_cast<float>(entry.first)));
-			vs->immediate_uv(meshInstance.immediate, toGd(t2));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p2));
-			vs->immediate_uv(meshInstance.immediate, toGd(t3));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p3));
+			colors[vertexIndex * 4 + 0] = toGd(trail.color[p] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p] * packFactor) + pixelpart::vec3d(packFactor), 0.0));
+			colors[vertexIndex * 4 + 1] = toGd(trail.color[p] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p] * packFactor) + pixelpart::vec3d(packFactor), 0.0));
+			colors[vertexIndex * 4 + 2] = toGd(trail.color[p + 1] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p + 1] * packFactor) + pixelpart::vec3d(packFactor), 0.0));
+			colors[vertexIndex * 4 + 3] = toGd(trail.color[p + 1] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p + 1] * packFactor) + pixelpart::vec3d(packFactor), 0.0));
 
-			vs->immediate_tangent(meshInstance.immediate, Plane(toGd(trail.velocity[p]), 0.0f));
-			vs->immediate_color(meshInstance.immediate, toGd(trail.color[p] * 0.1 + pixelpart::vec4d(glm::floor(trail.force[p] * packFactor) + pixelpart::vec3d(packFactor), 0.0)));
-			vs->immediate_uv2(meshInstance.immediate, Vector2(trail.life[p], static_cast<float>(entry.first)));
-			vs->immediate_uv(meshInstance.immediate, toGd(t1));
-			vs->immediate_vertex(meshInstance.immediate, toGd(p1));
+			uvs[vertexIndex * 4 + 0] = toGd(uv0);
+			uvs[vertexIndex * 4 + 1] = toGd(uv1);
+			uvs[vertexIndex * 4 + 2] = toGd(uv2);
+			uvs[vertexIndex * 4 + 3] = toGd(uv3);
+
+			uvs2[vertexIndex * 4 + 0] = Vector2(static_cast<float>(trail.life[p]), static_cast<float>(entry.first));
+			uvs2[vertexIndex * 4 + 1] = Vector2(static_cast<float>(trail.life[p]), static_cast<float>(entry.first));
+			uvs2[vertexIndex * 4 + 2] = Vector2(static_cast<float>(trail.life[p + 1]), static_cast<float>(entry.first));
+			uvs2[vertexIndex * 4 + 3] = Vector2(static_cast<float>(trail.life[p + 1]), static_cast<float>(entry.first));
+
+			vertexIndex++;
 		}
 	}
 
-	vs->immediate_end(meshInstance.immediate);
+	Array meshArray;
+	meshArray.resize(Mesh::ARRAY_MAX);
+	meshArray[Mesh::ARRAY_VERTEX] = vertexArray;
+	meshArray[Mesh::ARRAY_TANGENT] = tangentArray;
+	meshArray[Mesh::ARRAY_COLOR] = colorArray;
+	meshArray[Mesh::ARRAY_TEX_UV] = uvArray;
+	meshArray[Mesh::ARRAY_TEX_UV2] = uv2Array;
+	meshArray[Mesh::ARRAY_INDEX] = indexArray;
+
+	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, meshArray, Array(),
+		Mesh::ARRAY_FORMAT_VERTEX | Mesh::ARRAY_FORMAT_TANGENT | Mesh::ARRAY_FORMAT_COLOR |
+		Mesh::ARRAY_FORMAT_TEX_UV | Mesh::ARRAY_FORMAT_TEX_UV2 |
+		Mesh::ARRAY_FORMAT_INDEX);
 }
 
 pixelpart::mat3d PixelpartEffect::rotation3d(const pixelpart::vec3d& angle) {
