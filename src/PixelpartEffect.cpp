@@ -424,6 +424,7 @@ void PixelpartEffect::draw_particles(uint32_t particleTypeIndex) {
 	const pixelpart::Effect* effect = particleEngine->getEffect();
 	const pixelpart::ParticleType& particleType = effect->particleTypes.getByIndex(particleTypeIndex);
 	const pixelpart::ParticleEmitter& particleEmitter = effect->particleEmitters.get(particleType.parentId);
+	pixelpart::floatd alpha = std::fmod(particleEngine->getTime() - particleEmitter.lifetimeStart, particleEmitter.lifetimeDuration) / particleEmitter.lifetimeDuration;
 
 	ParticleMeshInstance& meshInstance = particleMeshInstances.at(particleTypeIndex);
 	meshInstance.mesh->clear_surfaces();
@@ -445,9 +446,12 @@ void PixelpartEffect::draw_particles(uint32_t particleTypeIndex) {
 		shaderMaterial->set_shader_param(samplerName, textures.at(meshInstance.textures[t]));
 	}
 
+	Transform particleMeshTransform = get_global_transform();
+	particleMeshTransform.translate(toGd(particleEmitter.position.get(alpha) * scale));
+
 	VisualServer* vs = VisualServer::get_singleton();
 	vs->instance_set_scenario(meshInstance.instanceRID, get_world()->get_scenario());
-	vs->instance_set_transform(meshInstance.instanceRID, get_global_transform());
+	vs->instance_set_transform(meshInstance.instanceRID, particleMeshTransform);
 
 	add_particle_mesh(meshInstance,
 		particleType,
@@ -478,18 +482,13 @@ void PixelpartEffect::add_particle_sprites(ParticleMeshInstance& meshInstance, c
 		return;
 	}
 
-	const pixelpart::ParticleEmitter& particleEmitter = nativeEffect.particleEmitters.get(particleType.parentId);
-	pixelpart::floatd alpha = std::fmod(particleEngine->getTime() - particleEmitter.lifetimeStart, particleEmitter.lifetimeDuration) / particleEmitter.lifetimeDuration;
-
-	Viewport* viewport = get_viewport();
-	if(!viewport) {
-		return;
-	}
-
-	Camera* camera = viewport->get_camera();
+	Camera* camera = get_viewport()->get_camera();
 	if(!camera) {
 		return;
 	}
+
+	const pixelpart::ParticleEmitter& particleEmitter = nativeEffect.particleEmitters.get(particleType.parentId);
+	pixelpart::floatd alpha = std::fmod(particleEngine->getTime() - particleEmitter.lifetimeStart, particleEmitter.lifetimeDuration) / particleEmitter.lifetimeDuration;
 
 	const pixelpart::ParticleData* particleRenderData = &particles;
 
@@ -620,10 +619,10 @@ void PixelpartEffect::add_particle_sprites(ParticleMeshInstance& meshInstance, c
 			}
 		}
 
-		positions[p * 4 + 0] = toGd(position[0] * scale);
-		positions[p * 4 + 1] = toGd(position[1] * scale);
-		positions[p * 4 + 2] = toGd(position[2] * scale);
-		positions[p * 4 + 3] = toGd(position[3] * scale);
+		positions[p * 4 + 0] = toGd((position[0] - particleEmitter.position.get(alpha)) * scale);
+		positions[p * 4 + 1] = toGd((position[1] - particleEmitter.position.get(alpha)) * scale);
+		positions[p * 4 + 2] = toGd((position[2] - particleEmitter.position.get(alpha)) * scale);
+		positions[p * 4 + 3] = toGd((position[3] - particleEmitter.position.get(alpha)) * scale);
 	}
 
 	for(uint32_t p = 0; p < numParticles; p++) {
@@ -700,6 +699,9 @@ void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, co
 	if(numParticles < 2u) {
 		return;
 	}
+
+	const pixelpart::ParticleEmitter& particleEmitter = nativeEffect.particleEmitters.get(particleType.parentId);
+	pixelpart::floatd alpha = std::fmod(particleEngine->getTime() - particleEmitter.lifetimeStart, particleEmitter.lifetimeDuration) / particleEmitter.lifetimeDuration;
 
 	std::vector<uint32_t> sortKeys(numParticles);
 	std::iota(sortKeys.begin(), sortKeys.end(), 0);
@@ -898,10 +900,10 @@ void PixelpartEffect::add_particle_trails(ParticleMeshInstance& meshInstance, co
 		for(uint32_t p = 0; p < trail.numParticles - 1; p++) {
 			pixelpart::vec3d n0 = trail.direction[p] * std::max(trail.size[p].x, trail.size[p].y) * 0.5;
 			pixelpart::vec3d n1 = trail.direction[p + 1] * std::max(trail.size[p + 1].x, trail.size[p + 1].y) * 0.5;
-			pixelpart::vec3d p0 = (trail.position[p] + n0) * scale;
-			pixelpart::vec3d p1 = (trail.position[p] - n0) * scale;
-			pixelpart::vec3d p2 = (trail.position[p + 1] + n1) * scale;
-			pixelpart::vec3d p3 = (trail.position[p + 1] - n1) * scale;
+			pixelpart::vec3d p0 = (trail.position[p] + n0 - particleEmitter.position.get(alpha)) * scale;
+			pixelpart::vec3d p1 = (trail.position[p] - n0 - particleEmitter.position.get(alpha)) * scale;
+			pixelpart::vec3d p2 = (trail.position[p + 1] + n1 - particleEmitter.position.get(alpha)) * scale;
+			pixelpart::vec3d p3 = (trail.position[p + 1] - n1 - particleEmitter.position.get(alpha)) * scale;
 			pixelpart::vec2d uv0, uv1, uv2, uv3;
 
 			switch(particleType.trailRendererSettings.textureRotation) {
