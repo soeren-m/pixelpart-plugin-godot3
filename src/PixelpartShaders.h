@@ -2,9 +2,12 @@
 #define PIXELPART_SHADERS_H
 
 #include "BlendMode.h"
+#include "ParticleNormalMode.h"
 #include <Godot.hpp>
 #include <Node.hpp>
 #include <Shader.hpp>
+#include <CanvasItemMaterial.hpp>
+#include <SpatialMaterial.hpp>
 #include <unordered_map>
 #include <string>
 
@@ -23,9 +26,14 @@ public:
 	void _init();
 
 	Ref<Shader> get_canvas_shader(const std::string& shaderSource,
-		pixelpart::BlendMode blendMode);
+		pixelpart::BlendMode blendMode,
+		CanvasItemMaterial::LightMode lightMode);
 	Ref<Shader> get_spatial_shader(const std::string& shaderSource,
-		pixelpart::BlendMode blendMode);
+		pixelpart::BlendMode blendMode,
+		bool unshaded, bool vertexLighting,
+		SpatialMaterial::DiffuseMode diffuseMode,
+		SpatialMaterial::SpecularMode specularMode,
+		ParticleNormalMode normalMode);
 
 	Ref<Shader> get_shader(const std::string& shaderSource,
 		const std::string& shaderType,

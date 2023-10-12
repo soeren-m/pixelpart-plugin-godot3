@@ -7,6 +7,7 @@
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
 #include "PixelpartSortUtil.h"
+#include "PixelpartParticleMaterial3D.h"
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Spatial.hpp>
@@ -52,6 +53,9 @@ public:
 	void set_frame_rate(float r);
 	float get_frame_rate() const;
 
+	void set_particle_materials(Array materials);
+	Array get_particle_materials() const;
+
 	float get_import_scale() const;
 
 	void set_effect(Ref<PixelpartEffectResource> effectRes);
@@ -71,7 +75,8 @@ public:
 	Ref<PixelpartCollider> get_collider_at_index(int index) const;
 
 private:
-	struct ParticleMeshInstance {
+	class ParticleMeshInstance {
+	public:
 		struct ParticleTrail {
 			uint32_t numParticles = 0;
 			pixelpart::floatd length = 0.0;
@@ -82,16 +87,39 @@ private:
 			std::vector<pixelpart::vec3d> velocity;
 			std::vector<pixelpart::vec3d> force;
 			std::vector<pixelpart::vec3d> direction;
+			std::vector<pixelpart::vec3d> directionToEdge;
 			std::vector<pixelpart::floatd> index;
 			std::vector<pixelpart::floatd> life;
 		};
 
+		ParticleMeshInstance(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial3D> particleMaterial);
+		ParticleMeshInstance(const ParticleMeshInstance&) = delete;
+		~ParticleMeshInstance();
+
+		ParticleMeshInstance& operator=(const ParticleMeshInstance&) = delete;
+
+		void update_shader(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial3D> particleMaterial);
+
+		Ref<Shader> get_shader() const;
+		Ref<ShaderMaterial> get_shader_material() const;
+		Ref<ArrayMesh> get_mesh() const;
+		RID get_instance_rid() const;
+
+		std::string get_texture_id(std::size_t index) const;
+		std::size_t get_texture_count() const;
+
+		pixelpart::ParticleData& get_sorted_particle_data();
+		std::vector<uint32_t>& get_sort_keys();
+
+		std::unordered_map<uint32_t, ParticleTrail>& get_trails();
+
+	private:
 		RID instanceRID;
 		Ref<ArrayMesh> mesh;
 		Ref<Shader> shader;
 		Ref<ShaderMaterial> shaderMaterial;
 
-		std::vector<std::string> textures;
+		pixelpart::ShaderGraph::BuildResult shaderBuildResult;
 
 		pixelpart::ParticleData sortedParticleData;
 		std::vector<uint32_t> sortKeys;
@@ -125,7 +153,9 @@ private:
 	float speed = 1.0f;
 	float timeStep = 1.0f / 60.0f;
 
-	std::vector<ParticleMeshInstance> particleMeshInstances;
+	Array particleMaterials;
+
+	std::vector<std::unique_ptr<ParticleMeshInstance>> particleMeshInstances;
 	std::unordered_map<std::string, Ref<ImageTexture>> textures;
 };
 }

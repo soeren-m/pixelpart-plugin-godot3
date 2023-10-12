@@ -4,6 +4,6 @@
 
 [resource]
 
-resource_name = "PixelpartEffectResource"
-class_name = "PixelpartEffectResource"
+resource_name = "PixelpartParticleMaterial2D"
+class_name = "PixelpartParticleMaterial2D"
 library = ExtResource( 1 )

@@ -31,8 +31,10 @@ void PixelpartShaders::_init() {
 }
 
 Ref<Shader> PixelpartShaders::get_canvas_shader(const std::string& shaderSource,
-	pixelpart::BlendMode blendMode) {
+	pixelpart::BlendMode blendMode,
+	CanvasItemMaterial::LightMode lightMode) {
 	std::string renderMode;
+
 	switch(blendMode) {
 		case pixelpart::BlendMode::additive:
 			renderMode = "blend_add";
@@ -42,6 +44,17 @@ Ref<Shader> PixelpartShaders::get_canvas_shader(const std::string& shaderSource,
 			break;
 		default:
 			renderMode = "blend_mix";
+			break;
+	}
+
+	switch(lightMode) {
+		case CanvasItemMaterial::LIGHT_MODE_UNSHADED:
+			renderMode += ",unshaded";
+			break;
+		case CanvasItemMaterial::LIGHT_MODE_LIGHT_ONLY:
+			renderMode += ",light_only";
+			break;
+		default:
 			break;
 	}
 
@@ -60,8 +73,13 @@ Ref<Shader> PixelpartShaders::get_canvas_shader(const std::string& shaderSource,
 	return get_shader(shaderSource, "canvas_item", renderMode, vertexShaderSource, additionalFragmentShaderSource);
 }
 Ref<Shader> PixelpartShaders::get_spatial_shader(const std::string& shaderSource,
-	pixelpart::BlendMode blendMode) {
-	std::string renderMode = "cull_disabled,unshaded";
+	pixelpart::BlendMode blendMode,
+	bool unshaded, bool vertexLighting,
+	SpatialMaterial::DiffuseMode diffuseMode,
+	SpatialMaterial::SpecularMode specularMode,
+	ParticleNormalMode normalMode) {
+	std::string renderMode = "cull_disabled";
+
 	switch(blendMode) {
 		case pixelpart::BlendMode::additive:
 			renderMode += ",blend_add";
@@ -74,6 +92,53 @@ Ref<Shader> PixelpartShaders::get_spatial_shader(const std::string& shaderSource
 			break;
 	}
 
+	if(unshaded) {
+		renderMode += ",unshaded";
+	}
+	else if(vertexLighting) {
+		renderMode += ",vertex_lighting";
+	}
+
+	switch(diffuseMode) {
+		case SpatialMaterial::DIFFUSE_BURLEY:
+			renderMode += ",diffuse_burley";
+			break;
+		case SpatialMaterial::DIFFUSE_LAMBERT:
+			renderMode += ",diffuse_lambert";
+			break;
+		case SpatialMaterial::DIFFUSE_LAMBERT_WRAP:
+			renderMode += ",diffuse_lambert_wrap";
+			break;
+		case SpatialMaterial::DIFFUSE_OREN_NAYAR:
+			renderMode += ",diffuse_oren_nayar";
+			break;
+		case SpatialMaterial::DIFFUSE_TOON:
+			renderMode += ",diffuse_toon";
+			break;
+		default:
+			break;
+	}
+
+	switch(specularMode) {
+		case SpatialMaterial::SPECULAR_SCHLICK_GGX:
+			renderMode += ",specular_schlick_ggx";
+			break;
+		case SpatialMaterial::SPECULAR_BLINN:
+			renderMode += ",specular_blinn";
+			break;
+		case SpatialMaterial::SPECULAR_PHONG:
+			renderMode += ",specular_phong";
+			break;
+		case SpatialMaterial::SPECULAR_TOON:
+			renderMode += ",specular_toon";
+			break;
+		case SpatialMaterial::SPECULAR_DISABLED:
+			renderMode += ",specular_disabled";
+			break;
+		default:
+			break;
+	}
+
 	std::string vertexShaderSource = R"!(
 		const float __PACK_FACTOR__ = 10000.0;
 		VELOCITY = TANGENT.xyz;
@@ -82,12 +147,24 @@ Ref<Shader> PixelpartShaders::get_spatial_shader(const std::string& shaderSource
 		OBJECT_ID = UV2.y;
 		COLOR = fract(COLOR) * vec4(10.0);)!";
 
+	switch(normalMode) {
+		case PARTICLE_NORMAL_MODE_STATIC:
+			vertexShaderSource += "\nNORMAL = normalize(u_StaticNormal);";
+			break;
+		default:
+			vertexShaderSource += "\nNORMAL = normalize(NORMAL);";
+			break;
+	}
+
 	std::string additionalFragmentShaderSource = R"!(
 		if(!OUTPUT_IS_SRGB) {
 			__SHADER_COLOR__.rgb = mix(pow((__SHADER_COLOR__.rgb + vec3(0.055)) * (1.0 / (1.0 + 0.055)), vec3(2.4)), __SHADER_COLOR__.rgb * (1.0 / 12.92), lessThan(__SHADER_COLOR__.rgb, vec3(0.04045)));
 		}
 		ALBEDO = __SHADER_COLOR__.rgb;
-		ALPHA = __SHADER_COLOR__.a;)!";
+		ALPHA = __SHADER_COLOR__.a;
+		METALLIC = u_Metallic;
+		SPECULAR = u_Specular;
+		ROUGHNESS = u_Roughness;)!";
 
 	return get_shader(shaderSource, "spatial", renderMode, vertexShaderSource, additionalFragmentShaderSource);
 }

@@ -6,6 +6,7 @@
 #include "PixelpartParticleType.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
+#include "PixelpartParticleMaterial2D.h"
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Node2D.hpp>
@@ -54,6 +55,9 @@ public:
 	bool get_flip_h() const;
 	bool get_flip_v() const;
 
+	void set_particle_materials(Array materials);
+	Array get_particle_materials() const;
+
 	float get_import_scale() const;
 
 	void set_effect(Ref<PixelpartEffectResource> effectRes);
@@ -73,7 +77,8 @@ public:
 	Ref<PixelpartCollider> get_collider_at_index(int index) const;
 
 private:
-	struct ParticleMeshInstance {
+	class ParticleMeshInstance {
+	public:
 		struct ParticleTrail {
 			uint32_t numParticles = 0;
 			pixelpart::floatd length = 0.0;
@@ -93,16 +98,34 @@ private:
 			PoolColorArray colorArray;
 		};
 
-		RID canvasItem;
-		RID material;
+		ParticleMeshInstance(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial2D> particleMaterial);
+		ParticleMeshInstance(const ParticleMeshInstance&) = delete;
+		~ParticleMeshInstance();
+
+		ParticleMeshInstance& operator=(const ParticleMeshInstance&) = delete;
+
+		void update_shader(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial2D> particleMaterial);
+
+		Ref<Shader> get_shader() const;
+		RID get_material_rid() const;
+		RID get_canvas_item_rid() const;
+
+		std::string get_texture_id(std::size_t index) const;
+		std::size_t get_texture_count() const;
+
+		std::unordered_map<uint32_t, ParticleTrail>& get_trails();
+
+	private:
+		RID canvasItemRID;
+		RID materialRID;
 		Ref<Shader> shader;
 
-		std::vector<std::string> textures;
+		pixelpart::ShaderGraph::BuildResult shaderBuildResult;
 
 		std::unordered_map<uint32_t, ParticleTrail> trails;
 	};
 
-	void draw_particles(const pixelpart::ParticleType& particleType, ParticleMeshInstance& meshInstance);
+	void draw_particles(uint32_t particleTypeIndex);
 
 	void add_particle_mesh(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scaleX, pixelpart::floatd scaleY);
 	void add_particle_sprites(ParticleMeshInstance& meshInstance, const pixelpart::ParticleType& particleType, const pixelpart::ParticleData& particles, uint32_t numParticles, pixelpart::floatd scaleX, pixelpart::floatd scaleY);
@@ -132,7 +155,9 @@ private:
 	bool flipH = false;
 	bool flipV = true;
 
-	std::vector<ParticleMeshInstance> particleMeshInstances;
+	Array particleMaterials;
+
+	std::vector<std::unique_ptr<ParticleMeshInstance>> particleMeshInstances;
 	std::unordered_map<std::string, Ref<ImageTexture>> textures;
 };
 }

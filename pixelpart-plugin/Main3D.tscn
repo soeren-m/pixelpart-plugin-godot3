@@ -1,9 +1,22 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://addons/pixelpart/src/PixelpartEffect.gdns" type="Script" id=1]
 [ext_resource path="res://effects/SampleEffect3D.ppfx" type="Resource" id=2]
 [ext_resource path="res://Main3D.gd" type="Script" id=3]
 [ext_resource path="res://TestNode3D.gd" type="Script" id=4]
+[ext_resource path="res://addons/pixelpart/src/PixelpartParticleMaterial3D.gdns" type="Script" id=5]
+
+[sub_resource type="Resource" id=1]
+script = ExtResource( 5 )
+unshaded = false
+vertex_lighting = false
+diffuse_mode = 0
+specular_mode = 0
+normal_mode = 0
+static_normal = Vector3( 0, 1, 0 )
+metallic = 0.0
+specular = 0.5
+roughness = 1.0
 
 [node name="Main3D" type="Spatial"]
 script = ExtResource( 3 )
@@ -14,6 +27,15 @@ script = ExtResource( 4 )
 [node name="SampleEffect" type="Spatial" parent="TestNode3D"]
 script = ExtResource( 1 )
 effect = ExtResource( 2 )
+particle_materials = [ SubResource( 1 ) ]
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( -0.551843, -0.521097, 0.651097, -0.0916545, 0.813908, 0.573719, -0.828896, 0.256927, -0.49691, 14.1027, 17.0352, -13.4131 )
+transform = Transform( -0.0197987, -0.382247, 0.923848, 0.00423209, 0.923989, 0.382396, -0.999795, 0.0114807, -0.016676, 27.6432, 11.0339, -1.24938 )
+far = 1466.6
+
+[node name="OmniLight" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, 5 )
+light_color = Color( 0.270588, 0.776471, 0.505882, 1 )
+light_energy = 5.0
+omni_range = 20.0
+omni_attenuation = 0.5
