@@ -12,8 +12,6 @@ func _enter_tree():
 	add_project_setting("pixelpart/particle_capacity", 10000, TYPE_INT, PROPERTY_HINT_RANGE, "100,100000")
 
 	add_autoload_singleton("PixelpartShaders", plugin_path + "/src/PixelpartShaders.gdns")
-	add_custom_type("PixelpartParticleMaterial2D", "Resource", load(plugin_path + "/src/PixelpartParticleMaterial2D.gdns"), icon_canvas_item)
-	add_custom_type("PixelpartParticleMaterial3D", "Resource", load(plugin_path + "/src/PixelpartParticleMaterial3D.gdns"), icon_canvas_item)
 	add_custom_type("PixelpartEffectResource", "Resource", load(plugin_path + "/src/PixelpartEffectResource.gdns"), icon_canvas_item)
 	add_custom_type("PixelpartEffect2D", "Node2D", load(plugin_path + "/src/PixelpartEffect2D.gdns"), icon_canvas_item)
 	add_custom_type("PixelpartEffect", "Spatial", load(plugin_path + "/src/PixelpartEffect.gdns"), icon_spatial)
@@ -31,8 +29,6 @@ func _exit_tree():
 	remove_custom_type("PixelpartEffect")
 	remove_custom_type("PixelpartEffect2D")
 	remove_custom_type("PixelpartEffectResource")
-	remove_custom_type("PixelpartParticleMaterial3D")
-	remove_custom_type("PixelpartParticleMaterial2D")
 	remove_autoload_singleton("PixelpartShaders")
 
 	remove_project_setting("pixelpart/particle_capacity")

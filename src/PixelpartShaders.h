@@ -2,7 +2,6 @@
 #define PIXELPART_SHADERS_H
 
 #include "BlendMode.h"
-#include "ParticleNormalMode.h"
 #include <Godot.hpp>
 #include <Node.hpp>
 #include <Shader.hpp>
@@ -32,8 +31,7 @@ public:
 		pixelpart::BlendMode blendMode,
 		bool unshaded, bool vertexLighting,
 		SpatialMaterial::DiffuseMode diffuseMode,
-		SpatialMaterial::SpecularMode specularMode,
-		ParticleNormalMode normalMode);
+		SpatialMaterial::SpecularMode specularMode);
 
 	Ref<Shader> get_shader(const std::string& shaderSource,
 		const std::string& shaderType,

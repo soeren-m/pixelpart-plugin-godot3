@@ -57,8 +57,3 @@ enum ForceType {
 	POINT = 0,
 	AREA = 1
 }
-
-enum ParticleNormalMode {
-	MESH = 0,
-	STATIC = 1
-}

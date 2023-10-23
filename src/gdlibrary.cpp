@@ -1,5 +1,6 @@
 #include "PixelpartEffect.h"
 #include "PixelpartEffect2D.h"
+#include "PixelpartShaders.h"
 
 extern "C" void GDN_EXPORT godot_gdnative_init(godot_gdnative_init_options *o) {
 	godot::Godot::gdnative_init(o);
@@ -16,8 +17,6 @@ extern "C" void GDN_EXPORT godot_nativescript_init(void *handle) {
 	godot::register_class<godot::PixelpartCurve3>();
 	godot::register_class<godot::PixelpartGradient>();
 	godot::register_class<godot::PixelpartShaders>();
-	godot::register_class<godot::PixelpartParticleMaterial2D>();
-	godot::register_class<godot::PixelpartParticleMaterial3D>();
 	godot::register_class<godot::PixelpartEffectResource>();
 	godot::register_class<godot::PixelpartParticleEmitter>();
 	godot::register_class<godot::PixelpartParticleType>();

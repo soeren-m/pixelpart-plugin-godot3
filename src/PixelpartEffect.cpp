@@ -42,17 +42,6 @@ void PixelpartEffect::_register_methods() {
 		GODOT_PROPERTY_USAGE_DEFAULT,
 		GODOT_PROPERTY_HINT_EXP_RANGE, "1.0,100.0,1.0");
 
-	register_property<PixelpartEffect, String>("Shading",
-		nullptr, "",
-		GODOT_METHOD_RPC_MODE_DISABLED,
-		GODOT_PROPERTY_USAGE_GROUP,
-		GODOT_PROPERTY_HINT_NONE);
-	register_property<PixelpartEffect, Array>("particle_materials",
-		&PixelpartEffect::set_particle_materials, &PixelpartEffect::get_particle_materials, Array(),
-		GODOT_METHOD_RPC_MODE_DISABLED,
-		GODOT_PROPERTY_USAGE_DEFAULT,
-		GODOT_PROPERTY_HINT_TYPE_STRING, "17/17:Resource");
-
 	register_method("_init", &PixelpartEffect::_init);
 	register_method("_enter_tree", &PixelpartEffect::_enter_tree);
 	register_method("_exit_tree", &PixelpartEffect::_exit_tree);
@@ -149,18 +138,6 @@ void PixelpartEffect::draw() {
 			return;
 		}
 
-		if(static_cast<int>(particleTypeIndex) < particleMaterials.size()) {
-			Ref<PixelpartParticleMaterial3D> particleMaterial = (Ref<PixelpartParticleMaterial3D>)particleMaterials[particleTypeIndex];
-
-			if(particleMaterial.is_valid() && particleMaterial->is_shader_dirty()) {
-				particleMeshInstances[particleTypeIndex]->update_shader(
-					nativeEffect.particleTypes.getByIndex(particleTypeIndex),
-					particleMaterial);
-
-				particleMaterial->set_shader_dirty(false);
-			}
-		}
-
 		draw_particles(particleTypeIndex);
 	}
 }
@@ -210,13 +187,6 @@ void PixelpartEffect::set_frame_rate(float r) {
 }
 float PixelpartEffect::get_frame_rate() const {
 	return 1.0f / timeStep;
-}
-
-void PixelpartEffect::set_particle_materials(Array materials) {
-	particleMaterials = materials;
-}
-Array PixelpartEffect::get_particle_materials() const {
-	return particleMaterials;
 }
 
 float PixelpartEffect::get_import_scale() const {
@@ -281,14 +251,8 @@ void PixelpartEffect::set_effect(Ref<PixelpartEffectResource> effectRes) {
 		}
 
 		for(uint32_t particleTypeIndex = 0u; particleTypeIndex < nativeEffect.particleTypes.getCount(); particleTypeIndex++) {
-			Ref<PixelpartParticleMaterial3D> particleMaterial;
-			if(static_cast<int>(particleTypeIndex) < particleMaterials.size()) {
-				particleMaterial = (Ref<PixelpartParticleMaterial3D>)particleMaterials[particleTypeIndex];
-			}
-
 			particleMeshInstances.emplace_back(std::make_unique<ParticleMeshInstance>(
-				nativeEffect.particleTypes.getByIndex(particleTypeIndex),
-				particleMaterial));
+				nativeEffect.particleTypes.getByIndex(particleTypeIndex)));
 		}
 
 		for(const auto& resource : effectResource->get_project_resources().images) {
@@ -451,7 +415,7 @@ Ref<PixelpartCollider> PixelpartEffect::get_collider_at_index(int index) const {
 	return Ref<PixelpartCollider>();
 }
 
-PixelpartEffect::ParticleMeshInstance::ParticleMeshInstance(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial3D> particleMaterial) {
+PixelpartEffect::ParticleMeshInstance::ParticleMeshInstance(const pixelpart::ParticleType& particleType) {
 	VisualServer* vs = VisualServer::get_singleton();
 
 	mesh.instance();
@@ -461,7 +425,7 @@ PixelpartEffect::ParticleMeshInstance::ParticleMeshInstance(const pixelpart::Par
 	vs->instance_set_base(instanceRID, mesh->get_rid());
 
 	particleType.shader.build(shaderBuildResult);
-	update_shader(particleType, particleMaterial);
+	update_shader(particleType);
 }
 PixelpartEffect::ParticleMeshInstance::~ParticleMeshInstance() {
 	VisualServer* vs = VisualServer::get_singleton();
@@ -469,14 +433,12 @@ PixelpartEffect::ParticleMeshInstance::~ParticleMeshInstance() {
 	vs->free_rid(instanceRID);
 }
 
-void PixelpartEffect::ParticleMeshInstance::update_shader(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial3D> particleMaterial) {
+void PixelpartEffect::ParticleMeshInstance::update_shader(const pixelpart::ParticleType& particleType) {
 	shader = PixelpartShaders::get_instance()->get_spatial_shader(shaderBuildResult.code,
 		particleType.blendMode,
-		particleMaterial.is_valid() ? particleMaterial->get_unshaded() : true,
-		particleMaterial.is_valid() ? particleMaterial->get_vertex_lighting() : false,
-		particleMaterial.is_valid() ? static_cast<SpatialMaterial::DiffuseMode>(particleMaterial->get_diffuse_mode()) : SpatialMaterial::DIFFUSE_BURLEY,
-		particleMaterial.is_valid() ? static_cast<SpatialMaterial::SpecularMode>(particleMaterial->get_specular_mode()) : SpatialMaterial::SPECULAR_SCHLICK_GGX,
-		particleMaterial.is_valid() ? static_cast<ParticleNormalMode>(particleMaterial->get_normal_mode()) : PARTICLE_NORMAL_MODE_MESH);
+		true, false,
+		SpatialMaterial::DIFFUSE_BURLEY,
+		SpatialMaterial::SPECULAR_SCHLICK_GGX);
 
 	shaderMaterial->set_shader(shader);
 }
@@ -534,17 +496,6 @@ void PixelpartEffect::draw_particles(uint32_t particleTypeIndex) {
 	Ref<ShaderMaterial> shaderMaterial = meshInstance.get_shader_material();
 	shaderMaterial->set_shader_param("u_EffectTime", static_cast<float>(particleEngine->getTime()));
 	shaderMaterial->set_shader_param("u_ObjectTime", static_cast<float>(particleEngine->getTime() - particleEmitter.lifetimeStart));
-
-	if(static_cast<int64_t>(particleTypeIndex) < particleMaterials.size()) {
-		Ref<PixelpartParticleMaterial3D> particleMaterial = (Ref<PixelpartParticleMaterial3D>)particleMaterials[particleTypeIndex];
-
-		if(particleMaterial.is_valid()) {
-			shaderMaterial->set_shader_param("u_StaticNormal", particleMaterial->get_static_normal());
-			shaderMaterial->set_shader_param("u_Metallic", particleMaterial->get_metallic());
-			shaderMaterial->set_shader_param("u_Specular", particleMaterial->get_specular());
-			shaderMaterial->set_shader_param("u_Roughness", particleMaterial->get_roughness());
-		}
-	}
 
 	for(std::size_t t = 0; t < meshInstance.get_texture_count(); t++) {
 		String samplerName = String("TEXTURE") + String::num_int64(t);

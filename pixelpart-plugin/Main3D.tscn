@@ -1,22 +1,9 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://addons/pixelpart/src/PixelpartEffect.gdns" type="Script" id=1]
 [ext_resource path="res://effects/SampleEffect3D.ppfx" type="Resource" id=2]
 [ext_resource path="res://Main3D.gd" type="Script" id=3]
 [ext_resource path="res://TestNode3D.gd" type="Script" id=4]
-[ext_resource path="res://addons/pixelpart/src/PixelpartParticleMaterial3D.gdns" type="Script" id=5]
-
-[sub_resource type="Resource" id=1]
-script = ExtResource( 5 )
-unshaded = false
-vertex_lighting = false
-diffuse_mode = 0
-specular_mode = 0
-normal_mode = 0
-static_normal = Vector3( 0, 1, 0 )
-metallic = 0.0
-specular = 0.5
-roughness = 1.0
 
 [node name="Main3D" type="Spatial"]
 script = ExtResource( 3 )
@@ -27,7 +14,6 @@ script = ExtResource( 4 )
 [node name="SampleEffect" type="Spatial" parent="TestNode3D"]
 script = ExtResource( 1 )
 effect = ExtResource( 2 )
-particle_materials = [ SubResource( 1 ) ]
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( -0.0197987, -0.382247, 0.923848, 0.00423209, 0.923989, 0.382396, -0.999795, 0.0114807, -0.016676, 27.6432, 11.0339, -1.24938 )

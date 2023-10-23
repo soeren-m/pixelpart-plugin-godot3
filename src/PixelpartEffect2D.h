@@ -6,7 +6,6 @@
 #include "PixelpartParticleType.h"
 #include "PixelpartForceField.h"
 #include "PixelpartCollider.h"
-#include "PixelpartParticleMaterial2D.h"
 #include "ParticleEngine.h"
 #include <Godot.hpp>
 #include <Node2D.hpp>
@@ -55,9 +54,6 @@ public:
 	bool get_flip_h() const;
 	bool get_flip_v() const;
 
-	void set_particle_materials(Array materials);
-	Array get_particle_materials() const;
-
 	float get_import_scale() const;
 
 	void set_effect(Ref<PixelpartEffectResource> effectRes);
@@ -98,13 +94,13 @@ private:
 			PoolColorArray colorArray;
 		};
 
-		ParticleMeshInstance(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial2D> particleMaterial);
+		ParticleMeshInstance(const pixelpart::ParticleType& particleType);
 		ParticleMeshInstance(const ParticleMeshInstance&) = delete;
 		~ParticleMeshInstance();
 
 		ParticleMeshInstance& operator=(const ParticleMeshInstance&) = delete;
 
-		void update_shader(const pixelpart::ParticleType& particleType, Ref<PixelpartParticleMaterial2D> particleMaterial);
+		void update_shader(const pixelpart::ParticleType& particleType);
 
 		Ref<Shader> get_shader() const;
 		RID get_material_rid() const;
@@ -154,8 +150,6 @@ private:
 
 	bool flipH = false;
 	bool flipV = true;
-
-	Array particleMaterials;
 
 	std::vector<std::unique_ptr<ParticleMeshInstance>> particleMeshInstances;
 	std::unordered_map<std::string, Ref<ImageTexture>> textures;
