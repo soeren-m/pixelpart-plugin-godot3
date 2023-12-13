@@ -88,9 +88,6 @@ opts.Add(BoolVariable("use_mingw", "Use the MinGW compiler instead of MSVC - onl
 opts.Add(EnumVariable("target", "Compilation target", "debug", allowed_values=("debug", "release"), ignorecase=2))
 opts.Add(PathVariable("custom_api_file", "Path to a custom JSON API file", None, PathVariable.PathIsFile))
 opts.Add(BoolVariable("generate_bindings", "Generate GDNative API bindings", False))
-opts.Add("macos_deployment_target", "macOS deployment target", "default")
-opts.Add("macos_sdk_path", "macOS SDK path", "")
-opts.Add(EnumVariable("macos_arch", "Target macOS architecture", "universal", ["universal", "x86_64", "arm64"]))
 opts.Add(EnumVariable("ios_arch", "Target iOS architecture", "arm64", ["armv7", "arm64", "x86_64"]))
 opts.Add(BoolVariable("ios_simulator", "Target iOS Simulator", False))
 opts.Add("IPHONEPATH", "Path to iPhone toolchain", "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain")
@@ -138,25 +135,20 @@ elif env["platform"] == "osx":
     env["CC"] = "clang"
     env["CXX"] = "clang++"
 
-    if env["macos_arch"] == "universal":
-        env.Append(LINKFLAGS=["-arch", "x86_64", "-arch", "arm64"])
-        env.Append(CCFLAGS=["-arch", "x86_64", "-arch", "arm64"])
-    else:
-        env.Append(LINKFLAGS=["-arch", env["macos_arch"]])
-        env.Append(CCFLAGS=["-arch", env["macos_arch"]])
-
-    env.Append(CFLAGS=["-DHAVE_UNISTD_H"])
-    env.Append(CXXFLAGS=["-std=c++17"])
-
-    if env["macos_deployment_target"] != "default":
-        env.Append(CCFLAGS=["-mmacosx-version-min=" + env["macos_deployment_target"]])
-        env.Append(LINKFLAGS=["-mmacosx-version-min=" + env["macos_deployment_target"]])
-
-    if env["macos_sdk_path"]:
-        env.Append(CCFLAGS=["-isysroot", env["macos_sdk_path"]])
-        env.Append(LINKFLAGS=["-isysroot", env["macos_sdk_path"]])
-
-    env.Append(LINKFLAGS=["-framework", "Cocoa", "-Wl,-undefined,dynamic_lookup"])
+    env.Append(CCFLAGS=[
+        "-arch", "x86_64",
+        "-arch", "arm64",
+        "-mmacosx-version-min=10.10"])
+    env.Append(CFLAGS=[
+        "-DHAVE_UNISTD_H"])
+    env.Append(CXXFLAGS=[
+        "-std=c++17"])
+    env.Append(LINKFLAGS=[
+        "-arch", "x86_64",
+        "-arch", "arm64",
+        "-mmacosx-version-min=10.10",
+        "-framework", "Cocoa",
+        "-Wl,-undefined,dynamic_lookup"])
 
     if env["target"] == "debug":
         env.Append(CCFLAGS=["-Og", "-g"])
